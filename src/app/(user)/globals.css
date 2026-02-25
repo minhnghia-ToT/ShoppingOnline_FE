@@ -1,0 +1,99 @@
+:root {
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #ffffff;
+  color: #111;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 60px 20px;
+}
+
+/* Auth Styling - Luxury */
+
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh;
+  background: #ffffff;
+}
+
+.auth-card {
+  width: 420px;
+  padding: 50px;
+  background: #fff;
+  border: 1px solid #eee;
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 35px;
+  font-size: 28px;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-card input {
+  padding: 14px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  background: transparent;
+  transition: 0.3s;
+}
+
+.auth-card input:focus {
+  border-color: #000;
+  outline: none;
+}
+
+.auth-card button {
+  padding: 14px;
+  background: #000;
+  color: #fff;
+  border: none;
+  letter-spacing: 1px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.auth-card button:hover {
+  background: #333;
+}
+
+.extra {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.extra a {
+  font-size: 13px;
+  color: #555;
+  text-decoration: none;
+}
+
+.extra a:hover {
+  color: #000;
+}
+
+.error {
+  font-size: 13px;
+  color: #b00020;
+}

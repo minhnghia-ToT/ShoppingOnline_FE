@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import { useRouter } from "next/navigation";
 import {
   Chart as ChartJS,
@@ -37,7 +39,7 @@ function StatCard({
   color,
 }: {
   title: string;
-  value: string;
+  value: string | number;
   subtitle: string;
   icon: string;
   color: string;
@@ -83,22 +85,57 @@ function StatCard({
 export default function AdminPage() {
   const router = useRouter();
 
-  // Mock product sales data
-  const lineData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    datasets: [
-      {
-        label: "Products Sold",
-        data: [45, 60, 55, 80, 75, 95, 120],
-        borderColor: "#4f8cff",
-        backgroundColor: "rgba(79,140,255,0.12)",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: "#4f8cff",
-      },
-    ],
-  };
+  const [chartData, setChartData] = useState<any>(null);
+  const [overview, setOverview] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [weeklyData, overviewData] = await Promise.all([
+          api.getWeeklySales(),
+          api.getDashboardOverview(),
+        ]);
+
+        // Prepare chart data
+        const labels = weeklyData.map((item: any) => item.day);
+        const quantities = weeklyData.map(
+          (item: any) => item.totalQuantity
+        );
+
+        setChartData({
+          labels,
+          datasets: [
+            {
+              label: "Products Sold",
+              data: quantities,
+              borderColor: "#4f8cff",
+              backgroundColor: "rgba(79,140,255,0.12)",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 4,
+              pointBackgroundColor: "#4f8cff",
+            },
+          ],
+        });
+
+        setOverview(overviewData);
+      } catch (err: any) {
+        console.error(err);
+
+        if (err.message?.includes("401")) {
+          router.push("/login");
+        } else {
+          setError("Failed to load dashboard data.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [router]);
 
   const lineOptions = {
     responsive: true,
@@ -118,8 +155,13 @@ export default function AdminPage() {
   };
 
   return (
-    <div style={{ padding: "24px 30px", background: "#f6f8fc", minHeight: "100vh" }}>
-      
+    <div
+      style={{
+        padding: "24px 30px",
+        background: "#f6f8fc",
+        minHeight: "100vh",
+      }}
+    >
       {/* Header */}
       <div
         style={{
@@ -156,35 +198,42 @@ export default function AdminPage() {
       >
         <StatCard
           title="Total Products"
-          value="1,245"
+          value={overview ? overview.totalProducts : "--"}
           subtitle="Available in store"
           icon="📦"
           color="#e3f2fd"
         />
+
         <StatCard
           title="Products Sold"
-          value="5,482"
+          value={overview ? overview.productsSoldThisMonth : "--"}
           subtitle="This month"
           icon="🛒"
           color="#e8f5e9"
         />
+
         <StatCard
           title="Revenue"
-          value="$18,430"
+          value={
+            overview
+              ? `$${overview.revenueLast30Days.toLocaleString()}`
+              : "--"
+          }
           subtitle="Last 30 days"
           icon="💰"
           color="#fff3e0"
         />
+
         <StatCard
           title="Active Customers"
-          value="892"
+          value={overview ? overview.activeCustomers : "--"}
           subtitle="Returning buyers"
           icon="👥"
           color="#f3e5f5"
         />
       </div>
 
-      {/* Center Chart */}
+      {/* Chart */}
       <div style={{ ...cardStyle, padding: 28 }}>
         <h2
           style={{
@@ -196,7 +245,14 @@ export default function AdminPage() {
         >
           Weekly Product Sales
         </h2>
-        <Line data={lineData} options={lineOptions} />
+
+        {loading && <p>Loading dashboard...</p>}
+
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {!loading && !error && chartData && (
+          <Line data={chartData} options={lineOptions} />
+        )}
       </div>
     </div>
   );
