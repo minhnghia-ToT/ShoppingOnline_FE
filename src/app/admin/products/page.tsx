@@ -34,6 +34,8 @@ export default function AdminProductsPage() {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -66,6 +68,20 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTargetId) return;
+    try {
+      setDeleting(true);
+      await api.deleteProduct(deleteTargetId);
+      setDeleteTargetId(null);
+      fetchProducts();
+    } catch (error: any) {
+      alert(error.message || "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={centerStyle}>
@@ -81,27 +97,36 @@ export default function AdminProductsPage() {
     <div style={pageStyle}>
       <style>{css}</style>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={headerRow}>
         <div>
-          <p style={eyebrow}>QUẢN LÝ</p>
-          <h1 style={heading}>Sản phẩm</h1>
+          <p style={eyebrow}>ADMIN MANAGEMENT</p>
+          <h1 style={heading}>Products</h1>
         </div>
         <div style={countBadge}>{total}</div>
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div style={tableWrap}>
         <table style={tableStyle}>
           <thead>
             <tr>
-              {["", "Tên sản phẩm", "Danh mục", "Giá", "Tồn kho", "Trạng thái", ""].map(
-                (col, i) => (
-                  <th key={i} style={{ ...thStyle, textAlign: i === 6 ? "right" : "left" }}>
-                    {col}
-                  </th>
-                )
-              )}
+              {[
+                "",
+                "Product Name",
+                "Category",
+                "Price",
+                "Stock",
+                "Status",
+                "",
+              ].map((col, i) => (
+                <th
+                  key={i}
+                  style={{ ...thStyle, textAlign: i === 6 ? "right" : "left" }}
+                >
+                  {col}
+                </th>
+              ))}
             </tr>
           </thead>
 
@@ -120,7 +145,6 @@ export default function AdminProductsPage() {
                   onMouseEnter={() => setHoveredRow(product.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
-                  {/* Image */}
                   <td style={{ ...tdStyle, width: 64 }}>
                     <div style={imgWrap}>
                       {mainImage ? (
@@ -135,29 +159,31 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
 
-                  {/* Name */}
                   <td style={{ ...tdStyle, maxWidth: 240 }}>
                     <span style={productName}>{product.name}</span>
                   </td>
 
-                  {/* Category */}
                   <td style={tdStyle}>
                     <span style={categoryTag}>{product.categoryName}</span>
                   </td>
 
-                  {/* Price */}
-                  <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
+                  <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
                     {product.discountPrice > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column" as const, gap: 1 }}>
-                        <span style={oldPrice}>{product.price.toLocaleString()}đ</span>
-                        <span style={salePrice}>{product.discountPrice.toLocaleString()}đ</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        <span style={oldPrice}>
+                          ${product.price.toLocaleString()}
+                        </span>
+                        <span style={salePrice}>
+                          ${product.discountPrice.toLocaleString()}
+                        </span>
                       </div>
                     ) : (
-                      <span style={normalPrice}>{product.price.toLocaleString()}đ</span>
+                      <span style={normalPrice}>
+                        ${product.price.toLocaleString()}
+                      </span>
                     )}
                   </td>
 
-                  {/* Stock */}
                   <td style={tdStyle}>
                     <span
                       style={{
@@ -169,37 +195,59 @@ export default function AdminProductsPage() {
                     </span>
                   </td>
 
-                  {/* Status */}
                   <td style={tdStyle}>
                     <span
                       style={{
                         ...statusPill,
-                        background: product.status === "Active" ? "#111" : "#f0f0f0",
-                        color: product.status === "Active" ? "#fff" : "#888",
+                        background:
+                          product.status === "Active" ? "#111" : "#f0f0f0",
+                        color:
+                          product.status === "Active" ? "#fff" : "#888",
                       }}
                     >
-                      {product.status === "Active" ? "Hoạt động" : "Ẩn"}
+                      {product.status === "Active"
+                        ? "Active"
+                        : "Hidden"}
                     </span>
                   </td>
 
-                  {/* Actions */}
-                  <td style={{ ...tdStyle, textAlign: "right" as const }}>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>
                     <div style={actionGroup}>
                       <button
                         style={actionBtn}
                         onClick={() => setSelectedProductId(product.id)}
-                        title="Tải ảnh lên"
+                        title="Upload images"
                         className="action-btn"
                       >
                         <UploadIcon />
                       </button>
                       <button
                         style={actionBtn}
-                        onClick={() => router.push(`/admin/products/${product.id}`)}
-                        title="Xem chi tiết"
+                        onClick={() =>
+                          router.push(`/admin/products/${product.id}`)
+                        }
+                        title="View details"
                         className="action-btn"
                       >
                         <EyeIcon />
+                      </button>
+                      <button
+                        style={actionBtn}
+                        onClick={() =>
+                          router.push(`/admin/products/${product.id}/edit`)
+                        }
+                        title="Edit product"
+                        className="action-btn"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        style={{ ...actionBtn, color: "#e05a3a" }}
+                        onClick={() => setDeleteTargetId(product.id)}
+                        title="Delete product"
+                        className="action-btn-danger"
+                      >
+                        <TrashIcon />
                       </button>
                     </div>
                   </td>
@@ -210,12 +258,12 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {/* ── Upload Modal ── */}
+      {/* Upload Modal */}
       {selectedProductId && (
         <div style={overlayStyle} onClick={() => setSelectedProductId(null)}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <p style={modalLabel}>TẢI ẢNH LÊN</p>
-            <h2 style={modalTitle}>Chọn tệp ảnh</h2>
+            <p style={modalLabel}>UPLOAD</p>
+            <h2 style={modalTitle}>Select image files</h2>
 
             <label style={fileLabel} className="file-label">
               <input
@@ -227,8 +275,8 @@ export default function AdminProductsPage() {
               <UploadIcon />
               <span style={{ marginTop: 10, fontSize: 13, color: "#777" }}>
                 {selectedFiles
-                  ? `${selectedFiles.length} tệp đã chọn`
-                  : "Nhấn để chọn ảnh"}
+                  ? `${selectedFiles.length} file(s) selected`
+                  : "Click to choose images"}
               </span>
             </label>
 
@@ -243,14 +291,44 @@ export default function AdminProductsPage() {
                 }}
                 className="modal-btn-primary"
               >
-                {uploading ? <span className="dot-loader" /> : "Tải lên"}
+                {uploading ? <span className="dot-loader" /> : "Upload"}
               </button>
               <button
                 onClick={() => setSelectedProductId(null)}
                 style={modalSecondaryBtn}
                 className="modal-btn-secondary"
               >
-                Huỷ
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deleteTargetId && (
+        <div style={overlayStyle} onClick={() => setDeleteTargetId(null)}>
+          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+            <p style={modalLabel}>CONFIRMATION</p>
+            <h2 style={modalTitle}>Delete this product?</h2>
+            <p style={{ fontSize: 13, color: "#777", marginBottom: 24, lineHeight: 1.6 }}>
+              This action cannot be undone. The product will be permanently removed from the system.
+            </p>
+            <div style={modalActions}>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ ...modalPrimaryBtn, background: "#e05a3a" }}
+                className="modal-btn-danger"
+              >
+                {deleting ? <span className="dot-loader" /> : "Delete"}
+              </button>
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                style={modalSecondaryBtn}
+                className="modal-btn-secondary"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -273,6 +351,22 @@ const EyeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
     <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 );
 
@@ -547,6 +641,16 @@ const loaderBar: React.CSSProperties = {
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+  .action-btn-danger:hover {
+    background: #e05a3a !important;
+    border-color: #e05a3a !important;
+    color: white !important;
+  }
+
+  .modal-btn-danger:hover:not(:disabled) {
+    background: #c94d30 !important;
+  }
 
   .action-btn:hover {
     background: #111 !important;
