@@ -255,7 +255,36 @@ export const api = {
           ...getAuthHeaders(),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(status), 
+        body: JSON.stringify(status),
+      }
+    );
+
+    return handleResponse(res);
+  },
+
+  // ===============================
+  // ADMIN CATEGORIES
+  // ===============================
+
+  getAdminCategories: async () => {
+    const res = await fetch(
+      `${API_URL}/api/admin/categories`,
+      { headers: getAuthHeaders() }
+    );
+
+    return handleResponse(res);
+  },
+  // ===============================
+  // CREATE CATEGORY
+  // ===============================
+
+  createCategory: async (data: { name: string }) => {
+    const res = await fetch(
+      `${API_URL}/api/admin/categories`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
       }
     );
 
