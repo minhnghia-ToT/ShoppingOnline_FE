@@ -290,4 +290,37 @@ export const api = {
 
     return handleResponse(res);
   },
+  // ===============================
+  // UPDATE CATEGORY
+  // ===============================
+updateCategory: async (data: { id: number; name: string }) => {
+  const res = await fetch(`${API_URL}/api/admin/categories`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const text = await res.text(); // tránh lỗi json rỗng
+    throw new Error(text || "Update failed");
+  }
+
+  return res.json();
+},
+
+toggleCategoryStatus: async (id: number) => {
+  const res = await fetch(
+    `${API_URL}/api/admin/categories/${id}/toggle-status`,
+    {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Toggle status failed");
+  }
+
+  return res.json();
+},
 };

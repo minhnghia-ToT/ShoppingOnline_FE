@@ -6,13 +6,19 @@ import { api } from "@/src/lib/api";
 interface Category {
   id: number;
   name: string;
+  isActive: boolean;
 }
 
 export default function AdminCategoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const [toast, setToast] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -30,386 +36,278 @@ export default function AdminCategoryPage() {
     fetchCategories();
   }, []);
 
+  const openEdit = (cat: Category) => {
+    setEditId(cat.id);
+    setEditName(cat.name);
+    setEditOpen(true);
+  };
+
+  const closeEdit = () => {
+    setEditOpen(false);
+    setEditId(null);
+    setEditName("");
+  };
+
+  const showToast = (message: string) => {
+    setToast(message);
+
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
+  const handleUpdate = async () => {
+    if (!editName.trim() || editId === null) return;
+
+    try {
+      await api.updateCategory({
+        id: editId,
+        name: editName,
+      });
+
+      closeEdit();
+      fetchCategories();
+
+      showToast("Category updated successfully");
+    } catch (err: any) {
+      showToast(err.message || "Update failed");
+    }
+  };
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+      .cat-page{
+        font-family:'DM Sans',sans-serif;
+        background:#ffffff;
+        min-height:100vh;
+        padding:48px 56px;
+        color:#111;
+      }
 
-        .cat-page * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
+      .cat-header{
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:40px;
+      }
 
-        .cat-page {
-          font-family: 'DM Sans', sans-serif;
-          background: #ffffff;
-          min-height: 100vh;
-          padding: 48px 56px;
-          color: #111;
-        }
+      .cat-title{
+        font-size:34px;
+        font-weight:600;
+      }
 
-        /* ── Header ── */
-        .cat-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          margin-bottom: 48px;
-          padding-bottom: 32px;
-          border-bottom: 1px solid #e8e8e8;
-        }
+      .cat-table-card{
+        border:1px solid #eee;
+        border-radius:12px;
+        overflow:hidden;
+      }
 
-        .cat-header-left {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
+      table{
+        width:100%;
+        border-collapse:collapse;
+      }
 
-        .cat-eyebrow {
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: #9ca3af;
-        }
+      th,td{
+        padding:16px 20px;
+        text-align:left;
+      }
 
-        .cat-title {
-          font-family: 'DM Serif Display', serif;
-          font-size: 38px;
-          font-weight: 400;
-          color: #0d0d0d;
-          line-height: 1.1;
-        }
+      th:last-child,
+      td:last-child{
+        text-align:right;
+      }
 
-        .cat-count-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          margin-top: 8px;
-          font-size: 13px;
-          color: #6b7280;
-          font-weight: 400;
-        }
+      tr{
+        border-bottom:1px solid #f2f2f2;
+        transition:background .2s;
+      }
 
-        .cat-count-badge span {
-          display: inline-block;
-          background: #f3f4f6;
-          border-radius: 20px;
-          padding: 2px 10px;
-          font-size: 12px;
-          font-weight: 500;
-          color: #374151;
-        }
+      tr:hover{
+        background:#fafafa;
+      }
 
-        /* ── Add Button ── */
-        .cat-add-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 11px 22px;
-          background: #0d0d0d;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13.5px;
-          font-weight: 500;
-          cursor: pointer;
-          letter-spacing: 0.01em;
-          transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
+      .cat-actions{
+        display:flex;
+        gap:10px;
+        justify-content:flex-end;
+      }
 
-        .cat-add-btn:hover {
-          background: #1f2937;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-        }
+      .cat-btn-edit{
+        background:#eef2ff;
+        color:#4338ca;
+        border:none;
+        padding:6px 14px;
+        border-radius:6px;
+        cursor:pointer;
+      }
 
-        .cat-add-btn:active {
-          transform: translateY(0);
-        }
+      .cat-btn-delete{
+        background:#fff1f1;
+        color:#dc2626;
+        border:none;
+        padding:6px 14px;
+        border-radius:6px;
+        cursor:pointer;
+      }
 
-        .cat-add-icon {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.2);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          line-height: 1;
-        }
+      /* STATUS */
 
-        /* ── Table ── */
-        .cat-table-card {
-          background: #fff;
-          border-radius: 14px;
-          border: 1px solid #ebebeb;
-          overflow: hidden;
-          box-shadow: 0 2px 20px rgba(0,0,0,0.04);
-        }
+      .cat-status{
+        font-size:12px;
+        padding:4px 10px;
+        border-radius:20px;
+        font-weight:500;
+      }
 
-        .cat-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
+      .status-active{
+        background:#ecfdf5;
+        color:#059669;
+      }
 
-        .cat-table thead tr {
-          background: #fafafa;
-          border-bottom: 1px solid #ebebeb;
-        }
+      .status-inactive{
+        background:#fee2e2;
+        color:#dc2626;
+      }
 
-        .cat-table th {
-          padding: 14px 20px;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #9ca3af;
-          text-align: left;
-        }
+      .cat-inactive{
+        background:#fff5f5;
+      }
 
-        .cat-table th:last-child {
-          text-align: right;
-        }
+      .cat-inactive td{
+        color:#dc2626;
+      }
 
-        .cat-table td {
-          padding: 16px 20px;
-          font-size: 14px;
-          color: #374151;
-          border-bottom: 1px solid #f5f5f5;
-          transition: background 0.15s ease;
-          vertical-align: middle;
-        }
+      /* POPUP */
 
-        .cat-table tbody tr:last-child td {
-          border-bottom: none;
-        }
+      .popup-overlay{
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.35);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:1000;
+      }
 
-        .cat-table tbody tr {
-          transition: background 0.15s ease;
-        }
+      .popup{
+        background:white;
+        padding:30px;
+        border-radius:12px;
+        width:340px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.15);
+      }
 
-        .cat-table tbody tr.row-hovered {
-          background: #fafafa;
-        }
+      .popup h3{
+        margin-bottom:15px;
+      }
 
-        /* Category name cell */
-        .cat-name-cell {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
+      .popup input{
+        width:100%;
+        padding:10px;
+        border:1px solid #ddd;
+        border-radius:6px;
+        margin-bottom:18px;
+      }
 
-        .cat-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #d1d5db;
-          flex-shrink: 0;
-          transition: background 0.2s;
-        }
+      .popup-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+      }
 
-        .row-hovered .cat-dot {
-          background: #0d0d0d;
-        }
+      .btn-cancel{
+        background:#eee;
+        border:none;
+        padding:8px 16px;
+        border-radius:6px;
+        cursor:pointer;
+      }
 
-        .cat-name-text {
-          font-weight: 500;
-          color: #111827;
-          font-size: 14.5px;
-        }
+      .btn-save{
+        background:#111;
+        color:white;
+        border:none;
+        padding:8px 16px;
+        border-radius:6px;
+        cursor:pointer;
+      }
 
-        /* Action column */
-        .cat-actions {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
+      /* TOAST */
 
-        .cat-btn-edit,
-        .cat-btn-delete {
-          padding: 7px 16px;
-          border: none;
-          border-radius: 6px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12.5px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.18s ease;
-          letter-spacing: 0.01em;
-        }
+      .toast{
+        position:fixed;
+        bottom:30px;
+        right:30px;
+        background:#111;
+        color:white;
+        padding:14px 22px;
+        border-radius:8px;
+        font-size:14px;
+        box-shadow:0 10px 25px rgba(0,0,0,0.2);
+        animation:toastIn .35s ease;
+      }
 
-        .cat-btn-edit {
-          background: #f0f4ff;
-          color: #2563eb;
+      @keyframes toastIn{
+        from{
+          opacity:0;
+          transform:translateY(20px);
         }
+        to{
+          opacity:1;
+          transform:translateY(0);
+        }
+      }
 
-        .cat-btn-edit:hover {
-          background: #2563eb;
-          color: #fff;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 10px rgba(37,99,235,0.25);
-        }
-
-        .cat-btn-delete {
-          background: #fff1f1;
-          color: #dc2626;
-        }
-
-        .cat-btn-delete:hover {
-          background: #dc2626;
-          color: #fff;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 10px rgba(220,38,38,0.22);
-        }
-
-        /* ── States ── */
-        .cat-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 64px 24px;
-          gap: 12px;
-          text-align: center;
-        }
-
-        .cat-state-icon {
-          font-size: 32px;
-          opacity: 0.3;
-        }
-
-        .cat-state-text {
-          font-size: 14px;
-          color: #9ca3af;
-          font-weight: 400;
-        }
-
-        .cat-error-text {
-          color: #ef4444;
-        }
-
-        /* ── Skeleton loader ── */
-        .cat-skeleton-row td {
-          padding: 18px 20px;
-        }
-
-        .skeleton-bar {
-          height: 14px;
-          border-radius: 6px;
-          background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-        }
-
-        .skeleton-bar.short { width: 40%; }
-        .skeleton-bar.medium { width: 60%; }
-        .skeleton-bar.btn {
-          width: 56px;
-          height: 28px;
-          display: inline-block;
-          border-radius: 6px;
-        }
-
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
       `}</style>
 
       <div className="cat-page">
-        {/* ── Header ── */}
         <div className="cat-header">
-          <div className="cat-header-left">
-            <p className="cat-eyebrow">Admin Panel</p>
-            <h1 className="cat-title">Categories</h1>
-            {!loading && !error && (
-              <p className="cat-count-badge">
-                <span>{categories.length}</span>
-                {categories.length === 1 ? "category" : "categories"} total
-              </p>
-            )}
-          </div>
-
-          <button className="cat-add-btn">
-            <span className="cat-add-icon">+</span>
-            Add Category
-          </button>
+          <h1 className="cat-title">Categories</h1>
         </div>
 
-        {/* ── Table Card ── */}
         <div className="cat-table-card">
-          <table className="cat-table">
+          <table>
             <thead>
               <tr>
                 <th>Category Name</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {/* Loading state */}
-              {loading &&
-                [1, 2, 3, 4].map((i) => (
-                  <tr key={i} className="cat-skeleton-row">
-                    <td>
-                      <div className="skeleton-bar medium" style={{ animationDelay: `${i * 0.1}s` }} />
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                        <div className="skeleton-bar btn" style={{ animationDelay: `${i * 0.1 + 0.05}s` }} />
-                        <div className="skeleton-bar btn" style={{ animationDelay: `${i * 0.1 + 0.1}s` }} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-              {/* Error state */}
-              {!loading && error && (
-                <tr>
-                  <td colSpan={2}>
-                    <div className="cat-state">
-                      <span className="cat-state-icon">⚠</span>
-                      <p className="cat-state-text cat-error-text">{error}</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Empty state */}
-              {!loading && !error && categories.length === 0 && (
-                <tr>
-                  <td colSpan={2}>
-                    <div className="cat-state">
-                      <span className="cat-state-icon">◻</span>
-                      <p className="cat-state-text">No categories yet. Add one to get started.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Data rows */}
               {!loading &&
-                !error &&
-                categories.map((category) => (
+                categories.map((cat) => (
                   <tr
-                    key={category.id}
-                    className={hoveredRow === category.id ? "row-hovered" : ""}
-                    onMouseEnter={() => setHoveredRow(category.id)}
-                    onMouseLeave={() => setHoveredRow(null)}
+                    key={cat.id}
+                    className={!cat.isActive ? "cat-inactive" : ""}
                   >
+                    <td>{cat.name}</td>
+
                     <td>
-                      <div className="cat-name-cell">
-                        <span className="cat-dot" />
-                        <span className="cat-name-text">{category.name}</span>
-                      </div>
+                      <span
+                        className={`cat-status ${
+                          cat.isActive
+                            ? "status-active"
+                            : "status-inactive"
+                        }`}
+                      >
+                        {cat.isActive ? "Active" : "Inactive"}
+                      </span>
                     </td>
+
                     <td>
                       <div className="cat-actions">
-                        <button className="cat-btn-edit">Edit</button>
-                        <button className="cat-btn-delete">Delete</button>
+                        <button
+                          className="cat-btn-edit"
+                          onClick={() => openEdit(cat)}
+                        >
+                          Edit
+                        </button>
+
+                        <button className="cat-btn-delete">
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -418,6 +316,31 @@ export default function AdminCategoryPage() {
           </table>
         </div>
       </div>
+
+      {editOpen && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h3>Edit Category</h3>
+
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
+
+            <div className="popup-actions">
+              <button className="btn-cancel" onClick={closeEdit}>
+                Cancel
+              </button>
+
+              <button className="btn-save" onClick={handleUpdate}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="toast">{toast}</div>}
     </>
   );
 }

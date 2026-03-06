@@ -36,8 +36,8 @@ export default function AdminLayout({
       links: [
         { href: "/admin/Categories", label: "All Categories", icon: "📂" },
         { href: "/admin/Categories/create", label: "Add Category", icon: "➕" },
-        { href: "/admin/Categories/update", label: "Edit Category", icon: "✏️" },
-        // { href: "/admin/Categories/detail", label: "Category Details", icon: "🔎" },
+        // { href: "/admin/Categories/update", label: "Edit Category", icon: "✏️" },
+        // // { href: "/admin/Categories/detail", label: "Category Details", icon: "🔎" },
         { href: "/admin/Categories/toggle", label: "Manage Status", icon: "🔄" },
       ],
     },
@@ -52,7 +52,7 @@ export default function AdminLayout({
         // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
       ],
     },
-     {
+    {
       group: "Product Report documents",
       links: [
         { href: "/admin/RP", label: "All Products", icon: "📊" },
