@@ -34,11 +34,11 @@ export default function AdminLayout({
     {
       group: "Category Management",
       links: [
-        { href: "/admin/categories", label: "All Categories", icon: "📂" },
-        { href: "/admin/categories/create", label: "Add Category", icon: "➕" },
-        { href: "/admin/categories/update", label: "Edit Category", icon: "✏️" },
-        { href: "/admin/categories/detail", label: "Category Details", icon: "🔎" },
-        { href: "/admin/categories/toggle", label: "Manage Status", icon: "🔄" },
+        { href: "/admin/Categories", label: "All Categories", icon: "📂" },
+        { href: "/admin/Categories/create", label: "Add Category", icon: "➕" },
+        // { href: "/admin/Categories/update", label: "Edit Category", icon: "✏️" },
+        // // { href: "/admin/Categories/detail", label: "Category Details", icon: "🔎" },
+        { href: "/admin/Categories/toggle", label: "Manage Status", icon: "🔄" },
       ],
     },
     {
@@ -46,10 +46,21 @@ export default function AdminLayout({
       links: [
         { href: "/admin/products", label: "All Products", icon: "📦" },
         { href: "/admin/products/create", label: "Add Product", icon: "➕" },
-        { href: "/admin/products/update", label: "Edit Product", icon: "✏️" },
-        { href: "/admin/products/detail", label: "Product Details", icon: "🔎" },
-        { href: "/admin/products/status", label: "Manage Product Status", icon: "⚡" },
-        { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
+        // { href: "/admin/products/update", label: "Edit Product", icon: "✏️" },
+        // { href: "/admin/products/detail", label: "Product Details", icon: "🔎" },
+        // { href: "/admin/products/status", label: "Manage Product Status", icon: "⚡" },
+        // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
+      ],
+    },
+    {
+      group: "Product Report documents",
+      links: [
+        { href: "/admin/RP", label: "All Products", icon: "📊" },
+        { href: "/admin/Export", label: "Add Product", icon: "📝" },
+        // { href: "/admin/products/update", label: "Edit Product", icon: "✏️" },
+        // { href: "/admin/products/detail", label: "Product Details", icon: "🔎" },
+        // { href: "/admin/products/status", label: "Manage Product Status", icon: "⚡" },
+        // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
       ],
     },
   ];

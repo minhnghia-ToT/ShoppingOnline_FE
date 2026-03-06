@@ -85,11 +85,13 @@ export default function AdminProductDetailPage() {
             </svg>
             Products
           </a>
+
           <div className="pdp-breadcrumb">
             <span>{product.categoryName}</span>
             <span className="pdp-sep">/</span>
             <span className="pdp-bc-active">{product.name}</span>
           </div>
+
           <div className={`pdp-status-tag ${isActive ? "status-active" : "status-inactive"}`}>
             <span className="status-dot" />
             {product.status}
@@ -101,11 +103,11 @@ export default function AdminProductDetailPage() {
 
           {/* LEFT — GALLERY */}
           <div className="pdp-gallery">
-            {/* Main image */}
             <div className="pdp-main-img-wrap">
               {hasDiscount && (
                 <div className="pdp-discount-pill">−{discountPct}%</div>
               )}
+
               {selectedImage && (
                 <img
                   key={selectedImage.id}
@@ -117,7 +119,6 @@ export default function AdminProductDetailPage() {
               )}
             </div>
 
-            {/* Thumbnails */}
             {product.images.length > 1 && (
               <div className="pdp-thumbs">
                 {product.images.map((img) => {
@@ -126,7 +127,10 @@ export default function AdminProductDetailPage() {
                     <button
                       key={img.id}
                       className={`pdp-thumb ${active ? "thumb-active" : ""}`}
-                      onClick={() => { setImgLoaded(false); setSelectedImage(img); }}
+                      onClick={() => {
+                        setImgLoaded(false);
+                        setSelectedImage(img);
+                      }}
                     >
                       <img
                         src={`${process.env.NEXT_PUBLIC_API_URL}${img.imageUrl}`}
@@ -146,7 +150,9 @@ export default function AdminProductDetailPage() {
             {/* Category */}
             <div className="pdp-category-row">
               <span className="pdp-category-chip">{product.categoryName}</span>
-              <span className="pdp-sku">SKU #{String(product.id).padStart(4, "0")}</span>
+              <span className="pdp-sku">
+                SKU #{String(product.id).padStart(4, "0")}
+              </span>
             </div>
 
             {/* Title */}
@@ -157,92 +163,107 @@ export default function AdminProductDetailPage() {
               {hasDiscount ? (
                 <>
                   <span className="pdp-price-old">
-                    {product.price.toLocaleString("vi-VN")}₫
+                    {product.price.toLocaleString("en-US")}₫
                   </span>
                   <span className="pdp-price-sale">
-                    {product.discountPrice.toLocaleString("vi-VN")}₫
+                    {product.discountPrice.toLocaleString("en-US")}₫
                   </span>
                   <span className="pdp-saving">
-                    Tiết kiệm {(product.price - product.discountPrice).toLocaleString("vi-VN")}₫
+                    Save{" "}
+                    {(product.price - product.discountPrice).toLocaleString(
+                      "en-US"
+                    )}
+                    ₫
                   </span>
                 </>
               ) : (
                 <span className="pdp-price-regular">
-                  {product.price.toLocaleString("vi-VN")}₫
+                  {product.price.toLocaleString("en-US")}₫
                 </span>
               )}
             </div>
 
-            {/* Divider */}
             <div className="pdp-rule" />
 
             {/* Meta grid */}
             <div className="pdp-meta-grid">
               <div className="pdp-meta-item">
-                <span className="pdp-meta-label">Trạng thái</span>
+                <span className="pdp-meta-label">Status</span>
                 <span className={`pdp-meta-value ${isActive ? "val-green" : "val-red"}`}>
                   {product.status}
                 </span>
               </div>
+
               <div className="pdp-meta-item">
-                <span className="pdp-meta-label">Tồn kho</span>
+                <span className="pdp-meta-label">Stock</span>
                 <span className={`pdp-meta-value ${inStock ? "val-green" : "val-red"}`}>
-                  {inStock ? `${product.stockQuantity} sản phẩm` : "Hết hàng"}
+                  {inStock
+                    ? `${product.stockQuantity} units`
+                    : "Out of stock"}
                 </span>
               </div>
+
               <div className="pdp-meta-item">
-                <span className="pdp-meta-label">Danh mục</span>
+                <span className="pdp-meta-label">Category</span>
                 <span className="pdp-meta-value">{product.categoryName}</span>
               </div>
+
               <div className="pdp-meta-item">
-                <span className="pdp-meta-label">Hình ảnh</span>
-                <span className="pdp-meta-value">{product.images.length} ảnh</span>
+                <span className="pdp-meta-label">Images</span>
+                <span className="pdp-meta-value">
+                  {product.images.length} images
+                </span>
               </div>
             </div>
 
             {/* Stock bar */}
             <div className="pdp-stock-bar-wrap">
               <div className="pdp-stock-bar-label">
-                <span>Mức tồn kho</span>
+                <span>Stock Level</span>
                 <span>{product.stockQuantity} units</span>
               </div>
+
               <div className="pdp-stock-bar-bg">
                 <div
                   className="pdp-stock-bar-fill"
                   style={{
                     width: `${Math.min(100, (product.stockQuantity / 50) * 100)}%`,
-                    background: product.stockQuantity > 20
-                      ? "linear-gradient(90deg,#4ade80,#22c55e)"
-                      : product.stockQuantity > 5
-                      ? "linear-gradient(90deg,#fbbf24,#f59e0b)"
-                      : "linear-gradient(90deg,#f87171,#ef4444)",
+                    background:
+                      product.stockQuantity > 20
+                        ? "linear-gradient(90deg,#4ade80,#22c55e)"
+                        : product.stockQuantity > 5
+                        ? "linear-gradient(90deg,#fbbf24,#f59e0b)"
+                        : "linear-gradient(90deg,#f87171,#ef4444)",
                   }}
                 />
               </div>
             </div>
 
-            {/* Divider */}
             <div className="pdp-rule" />
 
             {/* Description */}
             <div className="pdp-desc">
-              <p className="pdp-desc-label">Mô tả sản phẩm</p>
+              <p className="pdp-desc-label">Product Description</p>
               <p className="pdp-desc-text">{product.description}</p>
             </div>
 
             {/* Actions */}
             <div className="pdp-actions">
-              <a href={`/admin/products/${product.id}/edit`} className="pdp-btn-edit">
+              <a
+                href={`/admin/products/${product.id}/edit`}
+                className="pdp-btn-edit"
+              >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M11.333 2a1.885 1.885 0 0 1 2.667 2.667L4.667 14H2v-2.667L11.333 2Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Chỉnh sửa
+                Edit
               </a>
+
               <button className="pdp-btn-delete">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M2 4h12M5.333 4V2.667h5.334V4M6.667 7.333v4M9.333 7.333v4M13.333 4l-.667 9.333H3.334L2.667 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Xóa
+                Delete
               </button>
             </div>
 
@@ -252,7 +273,6 @@ export default function AdminProductDetailPage() {
     </>
   );
 }
-
 /* ─────────────────────────────────────────
    INLINE CSS
 ───────────────────────────────────────── */
