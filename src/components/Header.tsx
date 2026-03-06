@@ -1,68 +1,86 @@
 "use client";
 
 import Link from "next/link";
+import { ShoppingCart, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
- useEffect(() => {
-  const checkLogin = () => {
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const cart = localStorage.getItem("cart");
+
+    if (cart) {
+      const items = JSON.parse(cart);
+      setCartCount(items.length);
+    }
+  }, []);
+
+  const handleUserClick = () => {
     const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
+
+    if (!token) {
+      router.push("/login");
+    } else {
+      router.push("/profile");
+    }
   };
 
-  checkLogin();
-
-  window.addEventListener("storage", checkLogin);
-
-  return () => {
-    window.removeEventListener("storage", checkLogin);
+  const handleCartClick = () => {
+    router.push("/cart");
   };
-}, []);
 
   return (
-    <header style={headerStyle}>
-      <h2 style={logoStyle}>Luxury Store</h2>
+    <header className="header">
+      <nav className="nav">
 
-      <nav style={{ display: "flex", gap: "20px" }}>
-        {!isLoggedIn ? (
-          <>
-            <Link href="/login" style={linkStyle}>
-              Login
-            </Link>
-            <Link href="/register" style={linkStyle}>
-              Register
-            </Link>
-          </>
-        ) : (
-          <Link href="/profile" style={linkStyle}>
-            My Account
-          </Link>
-        )}
+        {/* LOGO */}
+        <div className="logo">
+          <Link href="/">VELORA</Link>
+        </div>
+
+        {/* MENU */}
+        <ul className="menu">
+          <li><Link href="/">Home</Link></li>
+          <li><Link href="/products">Shop</Link></li>
+          <li><Link href="/blog">Blog</Link></li>
+          <li><Link href="/about">About</Link></li>
+          <li><Link href="/faq">FAQ's</Link></li>
+          <li><Link href="/contact">Contact</Link></li>
+        </ul>
+
+        {/* ACTIONS */}
+        <div className="actions">
+
+          {/* USER */}
+          <button
+            className="icon-btn"
+            onClick={handleUserClick}
+          >
+            <User size={20} />
+          </button>
+
+          {/* CART */}
+          <button
+            className="cart"
+            onClick={handleCartClick}
+          >
+            <ShoppingCart size={20} />
+
+            {cartCount > 0 && (
+              <span className="cart-count">
+                {cartCount}
+              </span>
+            )}
+
+          </button>
+
+        </div>
+
       </nav>
     </header>
   );
 }
-
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "25px 60px",
-  borderBottom: "1px solid #eee",
-  backgroundColor: "#fff",
-};
-
-const logoStyle: React.CSSProperties = {
-  fontFamily: "var(--font-heading)",
-  fontSize: "22px",
-  letterSpacing: "1px",
-};
-
-const linkStyle: React.CSSProperties = {
-  textDecoration: "none",
-  color: "#111",
-  fontSize: "14px",
-  letterSpacing: "1px",
-};

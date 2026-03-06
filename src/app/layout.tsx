@@ -1,5 +1,3 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
@@ -15,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Luxury Store",
-  description: "Premium Fashion & Luxury Products",
+  title: "Velora Fashion Store",
+  description: "Timeless Fashion for the Modern Wardrobe",
 };
 
 export default function RootLayout({
