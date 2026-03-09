@@ -1,7 +1,18 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "localhost",
+        port: "7011",
+        pathname: "/uploads/**",
+      },
+    ],
 
-const nextConfig: NextConfig = {
-  /* config options here */
+    // QUAN TRỌNG
+    dangerouslyAllowLocalIP: true,
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

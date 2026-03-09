@@ -13,7 +13,13 @@ const getAuthHeaders = () => {
   };
 };
 
-// ✅ Safe response handler (KHÔNG BAO GIỜ CRASH)
+//Build image url
+export const getImageUrl = (path?: string) => {
+  if (!path) return "/no-image.png";
+  return `${API_URL}${path}`;
+};
+
+//Safe response handler (KHÔNG BAO GIỜ CRASH)
 const handleResponse = async (res: Response) => {
   const contentType = res.headers.get("content-type");
 
@@ -72,25 +78,30 @@ export const api = {
 
     return handleResponse(res);
   },
+  /* USER PRODUCT */
+
+  getProducts: async () => {
+    const res = await fetch(`${API_URL}/api/products`);
+    if (!res.ok) throw new Error("Failed to fetch products");
+    return res.json();
+  },
 
   // ===============================
   // DASHBOARD
   // ===============================
 
   getDashboardOverview: async () => {
-    const res = await fetch(
-      `${API_URL}/api/admin/dashboard/overview`,
-      { headers: getAuthHeaders() }
-    );
+    const res = await fetch(`${API_URL}/api/admin/dashboard/overview`, {
+      headers: getAuthHeaders(),
+    });
 
     return handleResponse(res);
   },
 
   getWeeklySales: async () => {
-    const res = await fetch(
-      `${API_URL}/api/admin/dashboard/weekly-sales`,
-      { headers: getAuthHeaders() }
-    );
+    const res = await fetch(`${API_URL}/api/admin/dashboard/weekly-sales`, {
+      headers: getAuthHeaders(),
+    });
 
     return handleResponse(res);
   },
@@ -100,47 +111,34 @@ export const api = {
   // ===============================
 
   getAdminProducts: async () => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products`,
-      { headers: getAuthHeaders() }
-    );
+    const res = await fetch(`${API_URL}/api/admin/products`, {
+      headers: getAuthHeaders(),
+    });
 
     return handleResponse(res);
   },
 
   getAdminProductById: async (id: number) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}`,
-      { headers: getAuthHeaders() }
-    );
+    const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
+      headers: getAuthHeaders(),
+    });
 
     return handleResponse(res);
   },
-
-  // ===============================
-  // CREATE PRODUCT (FormData)
-  // ===============================
 
   createProduct: async (formData: FormData) => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `${API_URL}/api/admin/products`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`, // KHÔNG set Content-Type khi dùng FormData
-        },
-        body: formData,
-      }
-    );
+    const res = await fetch(`${API_URL}/api/admin/products`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
 
     return handleResponse(res);
   },
-
-  // ===============================
-  // UPDATE PRODUCT (JSON mới của bạn)
-  // ===============================
 
   updateProduct: async (
     id: number,
@@ -158,21 +156,14 @@ export const api = {
       }[];
     }
   ) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}`,
-      {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      }
-    );
+    const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
 
     return handleResponse(res);
   },
-
-  // ===============================
-  // TOGGLE STATUS
-  // ===============================
 
   toggleProductStatus: async (id: number) => {
     const res = await fetch(
@@ -185,10 +176,6 @@ export const api = {
 
     return handleResponse(res);
   },
-
-  // ===============================
-  // UPLOAD IMAGES
-  // ===============================
 
   uploadProductImages: async (id: number, files: FileList) => {
     const token = localStorage.getItem("token");
@@ -212,26 +199,15 @@ export const api = {
     return handleResponse(res);
   },
 
-  // ===============================
-  // DELETE PRODUCT
-  // ===============================
-
   deleteProduct: async (id: number) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}`,
-      {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      }
-    );
+    const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
 
     await handleResponse(res);
     return true;
   },
-
-  // ===============================
-  // DELETE PRODUCT IMAGE
-  // ===============================
 
   deleteProductImage: async (imageId: number) => {
     const res = await fetch(
@@ -245,7 +221,7 @@ export const api = {
     await handleResponse(res);
     return true;
   },
-  // Update product status
+
   updateProductStatus: async (id: number, status: string) => {
     const res = await fetch(
       `${API_URL}/api/admin/products/${id}/status`,
@@ -267,60 +243,107 @@ export const api = {
   // ===============================
 
   getAdminCategories: async () => {
-    const res = await fetch(
-      `${API_URL}/api/admin/categories`,
-      { headers: getAuthHeaders() }
-    );
+    const res = await fetch(`${API_URL}/api/admin/categories`, {
+      headers: getAuthHeaders(),
+    });
 
     return handleResponse(res);
   },
-  // ===============================
-  // CREATE CATEGORY
-  // ===============================
 
   createCategory: async (data: { name: string }) => {
+    const res = await fetch(`${API_URL}/api/admin/categories`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return handleResponse(res);
+  },
+
+  updateCategory: async (data: { id: number; name: string }) => {
+    const res = await fetch(`${API_URL}/api/admin/categories`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Update failed");
+    }
+
+    return res.json();
+  },
+
+  toggleCategoryStatus: async (id: number) => {
     const res = await fetch(
-      `${API_URL}/api/admin/categories`,
+      `${API_URL}/api/admin/categories/${id}/toggle-status`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: getAuthHeaders(),
-        body: JSON.stringify(data),
       }
     );
 
+    if (!res.ok) {
+      throw new Error("Toggle status failed");
+    }
+
+    return res.json();
+  },
+
+  // ===============================
+  // USER PRODUCTS
+  // ===============================
+
+  getUserProducts: async () => {
+    const res = await fetch(`${API_URL}/api/products`);
     return handleResponse(res);
   },
-  // ===============================
-  // UPDATE CATEGORY
-  // ===============================
-updateCategory: async (data: { id: number; name: string }) => {
-  const res = await fetch(`${API_URL}/api/admin/categories`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
 
-  if (!res.ok) {
-    const text = await res.text(); // tránh lỗi json rỗng
-    throw new Error(text || "Update failed");
-  }
+  searchUserProducts: async (keyword: string) => {
+    const res = await fetch(
+      `${API_URL}/api/products/search?keyword=${keyword}`
+    );
 
-  return res.json();
-},
+    return handleResponse(res);
+  },
 
-toggleCategoryStatus: async (id: number) => {
-  const res = await fetch(
-    `${API_URL}/api/admin/categories/${id}/toggle-status`,
-    {
-      method: "PATCH",
+  // Banners
+  getUserProductById: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/products/${id}`);
+    return handleResponse(res);
+  },
+  getAdminBanners: async () => {
+    const res = await fetch(`${API_URL}/api/admin/banners`, {
       headers: getAuthHeaders(),
-    }
-  );
+    });
 
-  if (!res.ok) {
-    throw new Error("Toggle status failed");
-  }
+    return handleResponse(res);
+  },
+  deleteBanner: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/admin/banners/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
 
-  return res.json();
-},
+    await handleResponse(res);
+    return true;
+  },
+  createBanner: async (file: File) => {
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("Image", file);
+
+    const res = await fetch(`${API_URL}/api/admin/banners`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    return handleResponse(res);
+  },
+
 };
