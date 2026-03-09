@@ -43,7 +43,7 @@ const handleResponse = async (res: Response) => {
   if (!res.ok) {
     throw new Error(
       data?.message ||
-        (typeof data === "string" ? data : "Something went wrong")
+      (typeof data === "string" ? data : "Something went wrong")
     );
   }
 
@@ -78,7 +78,7 @@ export const api = {
 
     return handleResponse(res);
   },
- /* USER PRODUCT */
+  /* USER PRODUCT */
 
   getProducts: async () => {
     const res = await fetch(`${API_URL}/api/products`);
@@ -308,9 +308,42 @@ export const api = {
     return handleResponse(res);
   },
 
-  // API mới
+  // Banners
   getUserProductById: async (id: number) => {
     const res = await fetch(`${API_URL}/api/products/${id}`);
     return handleResponse(res);
   },
+  getAdminBanners: async () => {
+    const res = await fetch(`${API_URL}/api/admin/banners`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+  deleteBanner: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/admin/banners/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    await handleResponse(res);
+    return true;
+  },
+  createBanner: async (file: File) => {
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("Image", file);
+
+    const res = await fetch(`${API_URL}/api/admin/banners`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    return handleResponse(res);
+  },
+
 };

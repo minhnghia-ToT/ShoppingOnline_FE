@@ -176,7 +176,7 @@ export default function AdminPage() {
         </h1>
 
         <div
-          onClick={() => router.push("/admin/account")}
+          onClick={() => router.push("/app/profile")}
           style={{
             cursor: "pointer",
             fontWeight: 600,

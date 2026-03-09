@@ -63,6 +63,13 @@ export default function AdminLayout({
         // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
       ],
     },
+    {
+      group: "Banner Management",
+      links: [
+        { href: "/admin/Banner", label: "All Banners", icon: "📂" },
+        // { href: "/admin/Banner/create", label: "Add Banner", icon: "➕" },
+      ],
+    },
   ];
 
   return (
