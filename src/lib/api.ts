@@ -345,5 +345,42 @@ export const api = {
 
     return handleResponse(res);
   },
+  // ===============================
+  // USER ORDERS
+  // ===============================
 
+  checkout: async (paymentMethod: string) => {
+    const res = await fetch(`${API_URL}/api/orders/checkout`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ paymentMethod }),
+    });
+
+    return handleResponse(res);
+  },
+
+  getMyOrders: async () => {
+    const res = await fetch(`${API_URL}/api/orders/my-orders`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  getOrderById: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/orders/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  cancelOrder: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/orders/${id}/cancel`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
 };
