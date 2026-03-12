@@ -26,6 +26,7 @@ export default function HomePage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBanner, setCurrentBanner] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -94,37 +95,25 @@ export default function HomePage() {
     new Intl.NumberFormat("vi-VN").format(price) + "₫";
 
   // =========================
-  // CART FUNCTIONS
+  // ADD TO CART (API)
   // =========================
-  const addToCart = (product: Product) => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    const existing = cart.find((p: any) => p.id === product.id);
-
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        price: product.discountPrice || product.price,
-        image: product.mainImage,
-        quantity: 1,
-      });
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-  };
-
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = async (product: Product) => {
     if (!isLoggedIn()) {
       router.push("/login");
       return;
     }
 
-    addToCart(product);
+    try {
+      setLoadingId(product.id);
 
-    alert("Added to cart");
+      await api.addToCart(product.id, 1);
+
+      alert("Added to cart successfully");
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   // =========================
@@ -136,9 +125,7 @@ export default function HomePage() {
       return;
     }
 
-    addToCart(product);
-
-    router.push("/cart");
+    router.push(`/checkout?productId=${product.id}&quantity=1`);
   };
 
   return (
@@ -174,17 +161,13 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* =========================
-            HERO
-      ========================== */}
+      {/* HERO */}
       <section className="page-hero">
         <p className="hero-eyebrow">Collection</p>
         <h1 className="hero-title">Our Products</h1>
       </section>
 
-      {/* =========================
-            PRODUCTS
-      ========================== */}
+      {/* PRODUCTS */}
       <section className="product-grid">
         {products.map((product) => (
           <div
@@ -193,10 +176,7 @@ export default function HomePage() {
             onClick={() => router.push(`/product/${product.id}`)}
           >
             <div className="product-image-wrap">
-              <img
-                src={getImageUrl(product.mainImage)}
-                alt={product.name}
-              />
+              <img src={getImageUrl(product.mainImage)} alt={product.name} />
             </div>
 
             <div className="product-body">
@@ -229,8 +209,9 @@ export default function HomePage() {
                 <button
                   className="btn-cart"
                   onClick={() => handleAddToCart(product)}
+                  disabled={loadingId === product.id}
                 >
-                  Add to cart
+                  {loadingId === product.id ? "Adding..." : "Add to cart"}
                 </button>
 
                 <button
@@ -245,9 +226,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* =========================
-            STYLE
-      ========================== */}
+      {/* STYLE */}
       <style jsx>{`
         .home-page {
           font-family: sans-serif;
@@ -319,10 +298,6 @@ export default function HomePage() {
 
         .product-body {
           padding: 20px;
-        }
-
-        .product-name {
-          margin: 10px 0;
         }
 
         .product-actions {
