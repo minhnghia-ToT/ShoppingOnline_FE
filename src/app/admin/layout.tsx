@@ -11,11 +11,14 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+
   const [authorized, setAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
 
   useEffect(() => {
     const role = localStorage.getItem("role");
+
     if (!role || role.toLowerCase() !== "admin") {
       router.push("/login");
     } else {
@@ -25,7 +28,18 @@ export default function AdminLayout({
 
   if (!authorized) return null;
 
-  // ✅ USER FRIENDLY NAVIGATION
+  const toggleGroup = (group: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(group)
+        ? prev.filter((g) => g !== group)
+        : [...prev, group]
+    );
+  };
+
+  // ===============================
+  // NAV GROUPS
+  // ===============================
+
   const navGroups = [
     {
       group: "Dashboard",
@@ -36,8 +50,6 @@ export default function AdminLayout({
       links: [
         { href: "/admin/Categories", label: "All Categories", icon: "📂" },
         { href: "/admin/Categories/create", label: "Add Category", icon: "➕" },
-        // { href: "/admin/Categories/update", label: "Edit Category", icon: "✏️" },
-        // // { href: "/admin/Categories/detail", label: "Category Details", icon: "🔎" },
         { href: "/admin/Categories/toggle", label: "Manage Status", icon: "🔄" },
       ],
     },
@@ -46,28 +58,25 @@ export default function AdminLayout({
       links: [
         { href: "/admin/products", label: "All Products", icon: "📦" },
         { href: "/admin/products/create", label: "Add Product", icon: "➕" },
-        // { href: "/admin/products/update", label: "Edit Product", icon: "✏️" },
-        // { href: "/admin/products/detail", label: "Product Details", icon: "🔎" },
-        // { href: "/admin/products/status", label: "Manage Product Status", icon: "⚡" },
-        // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
+      ],
+    },
+    {
+      group: "Order Management",
+      links: [
+        { href: "/admin/Order", label: "All Orders", icon: "🧾" },
       ],
     },
     {
       group: "Product Report documents",
       links: [
-        { href: "/admin/RP", label: "All Products", icon: "📊" },
-        { href: "/admin/Export", label: "Add Product", icon: "📝" },
-        // { href: "/admin/products/update", label: "Edit Product", icon: "✏️" },
-        // { href: "/admin/products/detail", label: "Product Details", icon: "🔎" },
-        // { href: "/admin/products/status", label: "Manage Product Status", icon: "⚡" },
-        // { href: "/admin/products/delete-image", label: "Manage Product Images", icon: "🖼️" },
+        { href: "/admin/RP", label: "Product Report", icon: "📊" },
+        { href: "/admin/Export", label: "Export Document", icon: "📝" },
       ],
     },
     {
       group: "Banner Management",
       links: [
-        { href: "/admin/Banner", label: "All Banners", icon: "📂" },
-        // { href: "/admin/Banner/create", label: "Add Banner", icon: "➕" },
+        { href: "/admin/Banner", label: "All Banners", icon: "🖼️" },
       ],
     },
   ];
@@ -81,7 +90,10 @@ export default function AdminLayout({
         fontFamily: "'Nunito', 'Segoe UI', sans-serif",
       }}
     >
-      {/* Sidebar */}
+      {/* ===============================
+      SIDEBAR
+      =============================== */}
+
       <aside
         style={{
           width: sidebarOpen ? "240px" : "64px",
@@ -96,124 +108,167 @@ export default function AdminLayout({
           height: "100vh",
         }}
       >
-        {/* Logo */}
+        {/* LOGO */}
         <div
           style={{
             padding: "0 16px",
             height: "64px",
             display: "flex",
             alignItems: "center",
-            gap: "12px",
+            justifyContent: "space-between",
             borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              background:
-                "linear-gradient(135deg, #4fc3f7 0%, #1565c0 100%)",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "18px",
-              fontWeight: "800",
-              color: "white",
-            }}
-          >
-            A
-          </div>
-
-          {sidebarOpen && (
-            <span
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
               style={{
-                color: "white",
+                width: "36px",
+                height: "36px",
+                background:
+                  "linear-gradient(135deg, #4fc3f7 0%, #1565c0 100%)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
                 fontWeight: "800",
-                fontSize: "15px",
-                letterSpacing: "1px",
+                color: "white",
               }}
             >
-              ADMIN PANEL
-            </span>
-          )}
+              A
+            </div>
+
+            {sidebarOpen && (
+              <span
+                style={{
+                  color: "white",
+                  fontWeight: "800",
+                  fontSize: "15px",
+                  letterSpacing: "1px",
+                }}
+              >
+                ADMIN PANEL
+              </span>
+            )}
+          </div>
+
+          {/* Toggle sidebar */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "18px",
+            }}
+          >
+            ☰
+          </button>
         </div>
 
-        {/* Navigation */}
+        {/* ===============================
+        NAVIGATION
+        =============================== */}
+
         <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-          {navGroups.map((group) => (
-            <div key={group.group}>
-              {sidebarOpen && (
-                <p
+          {navGroups.map((group) => {
+            const isOpen = openGroups.includes(group.group);
+
+            return (
+              <div key={group.group}>
+                {/* GROUP HEADER */}
+                <div
+                  onClick={() => toggleGroup(group.group)}
                   style={{
-                    color: "rgba(255,255,255,0.3)",
-                    fontSize: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: sidebarOpen ? "space-between" : "center",
+                    padding: sidebarOpen ? "12px 16px" : "12px",
+                    cursor: "pointer",
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: "12px",
                     fontWeight: "700",
                     textTransform: "uppercase",
-                    letterSpacing: "1.5px",
-                    padding: "16px 16px 4px",
-                    margin: 0,
+                    letterSpacing: "1px",
                   }}
                 >
-                  {group.group}
-                </p>
-              )}
+                  {sidebarOpen && <span>{group.group}</span>}
 
-              {group.links.map((link) => {
-                const isActive = pathname === link.href;
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: sidebarOpen
-                        ? "10px 16px"
-                        : "12px 20px",
-                      color: isActive
-                        ? "#4fc3f7"
-                        : "rgba(255,255,255,0.55)",
-                      textDecoration: "none",
-                      fontSize: "13.5px",
-                      fontWeight: isActive ? "600" : "400",
-                      background: isActive
-                        ? "rgba(79,195,247,0.1)"
-                        : "transparent",
-                      borderLeft: isActive
-                        ? "3px solid #4fc3f7"
-                        : "3px solid transparent",
-                      transition: "all 0.15s ease",
-                      whiteSpace: "nowrap",
-                      justifyContent: sidebarOpen
-                        ? "flex-start"
-                        : "center",
-                    }}
-                  >
+                  {sidebarOpen && (
                     <span
                       style={{
-                        fontSize: "17px",
-                        width: "20px",
-                        textAlign: "center",
+                        transform: isOpen
+                          ? "rotate(90deg)"
+                          : "rotate(0deg)",
+                        transition: "0.2s",
                       }}
                     >
-                      {link.icon}
+                      ▶
                     </span>
+                  )}
+                </div>
 
-                    {sidebarOpen && (
-                      <span style={{ flex: 1 }}>{link.label}</span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+                {/* LINKS */}
+                {isOpen &&
+                  group.links.map((link) => {
+                    const isActive = pathname === link.href;
+
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: sidebarOpen
+                            ? "10px 16px 10px 28px"
+                            : "12px 20px",
+                          color: isActive
+                            ? "#4fc3f7"
+                            : "rgba(255,255,255,0.55)",
+                          textDecoration: "none",
+                          fontSize: "13.5px",
+                          fontWeight: isActive ? "600" : "400",
+                          background: isActive
+                            ? "rgba(79,195,247,0.1)"
+                            : "transparent",
+                          borderLeft: isActive
+                            ? "3px solid #4fc3f7"
+                            : "3px solid transparent",
+                          transition: "all 0.15s ease",
+                          justifyContent: sidebarOpen
+                            ? "flex-start"
+                            : "center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "17px",
+                            width: "20px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {link.icon}
+                        </span>
+
+                        {sidebarOpen && (
+                          <span style={{ flex: 1 }}>{link.label}</span>
+                        )}
+                      </Link>
+                    );
+                  })}
+              </div>
+            );
+          })}
         </nav>
       </aside>
 
-      {/* Main */}
+      {/* ===============================
+      MAIN CONTENT
+      =============================== */}
+
       <div
         style={{
           marginLeft: sidebarOpen ? "240px" : "64px",

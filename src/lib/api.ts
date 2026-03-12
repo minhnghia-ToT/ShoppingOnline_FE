@@ -13,13 +13,13 @@ const getAuthHeaders = () => {
   };
 };
 
-//Build image url
+// Build image url
 export const getImageUrl = (path?: string) => {
   if (!path) return "/no-image.png";
   return `${API_URL}${path}`;
 };
 
-//Safe response handler (KHÔNG BAO GIỜ CRASH)
+// Safe response handler
 const handleResponse = async (res: Response) => {
   const contentType = res.headers.get("content-type");
 
@@ -43,7 +43,7 @@ const handleResponse = async (res: Response) => {
   if (!res.ok) {
     throw new Error(
       data?.message ||
-      (typeof data === "string" ? data : "Something went wrong")
+        (typeof data === "string" ? data : "Something went wrong")
     );
   }
 
@@ -78,16 +78,137 @@ export const api = {
 
     return handleResponse(res);
   },
-  /* USER PRODUCT */
+
+  // ===============================
+  // USER PRODUCTS
+  // ===============================
 
   getProducts: async () => {
     const res = await fetch(`${API_URL}/api/products`);
-    if (!res.ok) throw new Error("Failed to fetch products");
-    return res.json();
+    return handleResponse(res);
+  },
+
+  getUserProductById: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/products/${id}`);
+    return handleResponse(res);
+  },
+
+  searchUserProducts: async (keyword: string) => {
+    const res = await fetch(
+      `${API_URL}/api/products/search?keyword=${keyword}`
+    );
+
+    return handleResponse(res);
   },
 
   // ===============================
-  // DASHBOARD
+  // USER CART  ⭐ NEW
+  // ===============================
+
+  getCart: async () => {
+    const res = await fetch(`${API_URL}/api/cart`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  addToCart: async (productId: number, quantity: number) => {
+    const res = await fetch(`${API_URL}/api/cart/add`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        productId,
+        quantity,
+      }),
+    });
+
+    return handleResponse(res);
+  },
+
+  updateCart: async (productId: number, quantity: number) => {
+    const res = await fetch(`${API_URL}/api/cart/update`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        productId,
+        quantity,
+      }),
+    });
+
+    return handleResponse(res);
+  },
+
+  removeCartItem: async (productId: number) => {
+    const res = await fetch(`${API_URL}/api/cart/${productId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  // ===============================
+  // USER ORDERS
+  // ===============================
+
+  checkoutCart: async (paymentMethod: string) => {
+    const res = await fetch(`${API_URL}/api/orders/checkout-cart`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        paymentMethod,
+      }),
+    });
+
+    return handleResponse(res);
+  },
+
+  buyNow: async (
+    productId: number,
+    quantity: number,
+    paymentMethod: string
+  ) => {
+    const res = await fetch(`${API_URL}/api/orders/buy-now`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        productId,
+        quantity,
+        paymentMethod,
+      }),
+    });
+
+    return handleResponse(res);
+  },
+
+  getMyOrders: async () => {
+    const res = await fetch(`${API_URL}/api/orders/my-orders`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  getOrderById: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/orders/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  cancelOrder: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/orders/${id}/cancel`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  // ===============================
+  // ADMIN DASHBOARD
   // ===============================
 
   getDashboardOverview: async () => {
@@ -140,61 +261,12 @@ export const api = {
     return handleResponse(res);
   },
 
-  updateProduct: async (
-    id: number,
-    data: {
-      name: string;
-      description: string;
-      price: number;
-      discountPrice: number;
-      stockQuantity: number;
-      status: string;
-      categoryId: number;
-      newImages: {
-        imageUrl: string;
-        isMain: boolean;
-      }[];
-    }
-  ) => {
+  updateProduct: async (id: number, data: any) => {
     const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-
-    return handleResponse(res);
-  },
-
-  toggleProductStatus: async (id: number) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}/toggle-status`,
-      {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-      }
-    );
-
-    return handleResponse(res);
-  },
-
-  uploadProductImages: async (id: number, files: FileList) => {
-    const token = localStorage.getItem("token");
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      formData.append("Images", files[i]);
-    }
-
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}/images`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      }
-    );
 
     return handleResponse(res);
   },
@@ -207,35 +279,6 @@ export const api = {
 
     await handleResponse(res);
     return true;
-  },
-
-  deleteProductImage: async (imageId: number) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/images/${imageId}`,
-      {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      }
-    );
-
-    await handleResponse(res);
-    return true;
-  },
-
-  updateProductStatus: async (id: number, status: string) => {
-    const res = await fetch(
-      `${API_URL}/api/admin/products/${id}/status`,
-      {
-        method: "PATCH",
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(status),
-      }
-    );
-
-    return handleResponse(res);
   },
 
   // ===============================
@@ -267,12 +310,7 @@ export const api = {
       body: JSON.stringify(data),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Update failed");
-    }
-
-    return res.json();
+    return handleResponse(res);
   },
 
   toggleCategoryStatus: async (id: number) => {
@@ -284,35 +322,48 @@ export const api = {
       }
     );
 
-    if (!res.ok) {
-      throw new Error("Toggle status failed");
-    }
-
-    return res.json();
-  },
-
-  // ===============================
-  // USER PRODUCTS
-  // ===============================
-
-  getUserProducts: async () => {
-    const res = await fetch(`${API_URL}/api/products`);
     return handleResponse(res);
   },
 
-  searchUserProducts: async (keyword: string) => {
+  // ===============================
+  // ADMIN ORDERS
+  // ===============================
+
+  getAdminOrders: async () => {
+    const res = await fetch(`${API_URL}/api/admin/orders`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  getAdminOrderById: async (id: number) => {
+    const res = await fetch(`${API_URL}/api/admin/orders/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  updateOrderStatus: async (id: number, status: string) => {
     const res = await fetch(
-      `${API_URL}/api/products/search?keyword=${keyword}`
+      `${API_URL}/api/admin/orders/${id}/status`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          Status: status,
+        }),
+      }
     );
 
     return handleResponse(res);
   },
 
-  // Banners
-  getUserProductById: async (id: number) => {
-    const res = await fetch(`${API_URL}/api/products/${id}`);
-    return handleResponse(res);
-  },
+  // ===============================
+  // BANNERS
+  // ===============================
+
   getAdminBanners: async () => {
     const res = await fetch(`${API_URL}/api/admin/banners`, {
       headers: getAuthHeaders(),
@@ -320,6 +371,7 @@ export const api = {
 
     return handleResponse(res);
   },
+
   deleteBanner: async (id: number) => {
     const res = await fetch(`${API_URL}/api/admin/banners/${id}`, {
       method: "DELETE",
@@ -329,6 +381,7 @@ export const api = {
     await handleResponse(res);
     return true;
   },
+
   createBanner: async (file: File) => {
     const token = localStorage.getItem("token");
 
@@ -341,44 +394,6 @@ export const api = {
         Authorization: `Bearer ${token}`,
       },
       body: formData,
-    });
-
-    return handleResponse(res);
-  },
-  // ===============================
-  // USER ORDERS
-  // ===============================
-
-  checkout: async (paymentMethod: string) => {
-    const res = await fetch(`${API_URL}/api/orders/checkout`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ paymentMethod }),
-    });
-
-    return handleResponse(res);
-  },
-
-  getMyOrders: async () => {
-    const res = await fetch(`${API_URL}/api/orders/my-orders`, {
-      headers: getAuthHeaders(),
-    });
-
-    return handleResponse(res);
-  },
-
-  getOrderById: async (id: number) => {
-    const res = await fetch(`${API_URL}/api/orders/${id}`, {
-      headers: getAuthHeaders(),
-    });
-
-    return handleResponse(res);
-  },
-
-  cancelOrder: async (id: number) => {
-    const res = await fetch(`${API_URL}/api/orders/${id}/cancel`, {
-      method: "POST",
-      headers: getAuthHeaders(),
     });
 
     return handleResponse(res);
