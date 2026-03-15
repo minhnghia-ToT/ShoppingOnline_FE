@@ -43,7 +43,7 @@ const handleResponse = async (res: Response) => {
   if (!res.ok) {
     throw new Error(
       data?.message ||
-        (typeof data === "string" ? data : "Something went wrong")
+      (typeof data === "string" ? data : "Something went wrong")
     );
   }
 
@@ -270,7 +270,53 @@ export const api = {
 
     return handleResponse(res);
   },
+  deleteProductImage: async (imageId: number) => {
+    const res = await fetch(
+      `${API_URL}/api/admin/products/images/${imageId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
+    if (!res.ok) {
+      throw new Error("Delete image failed");
+    }
+
+    return true;
+  },
+  uploadProductImages: async (productId: number, files: File[]) => {
+    const formData = new FormData();
+
+    files.forEach(file => {
+      formData.append("files", file);
+    });
+
+    const res = await fetch(
+      `${API_URL}/api/admin/products/${productId}/images`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Upload images failed");
+    }
+
+    return res.json();
+  },
+  updateProductStatus: async (id: number, status: string) => {
+    return fetch(`${API_URL}/products/${id}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    }).then(res => res.json());
+  },
   deleteProduct: async (id: number) => {
     const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
       method: "DELETE",
