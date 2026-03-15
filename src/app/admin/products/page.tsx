@@ -57,7 +57,10 @@ export default function AdminProductsPage() {
     if (!selectedFiles || !selectedProductId) return;
     try {
       setUploading(true);
-      await api.uploadProductImages(selectedProductId, selectedFiles);
+      await api.uploadProductImages(
+        selectedProductId,
+        Array.from(selectedFiles)
+      );
       setSelectedProductId(null);
       setSelectedFiles(null);
       fetchProducts();
