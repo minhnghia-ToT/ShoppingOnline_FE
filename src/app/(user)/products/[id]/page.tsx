@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/src/lib/api";
 
 interface Product {
@@ -18,10 +18,12 @@ interface Product {
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -42,26 +44,65 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
-  if (loading) return <p className="loading">Loading...</p>;
-  if (!product) return <p>Product not found</p>;
+  // =========================
+  // ACTIONS
+  // =========================
+  const handleAddToCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-  const hasDiscount = product.discountPrice > 0;
+      if (!token) {
+        alert("Please login first");
+        router.push("/login");
+        return;
+      }
 
+      setActionLoading(true);
+
+      await api.addToCart(product!.id, 1);
+
+      alert("Added to cart successfully");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBuyNow = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login first");
+      router.push("/login");
+      return;
+    }
+
+    router.push(`/checkout?productId=${product!.id}&quantity=1`);
+  };
+
+  // =========================
+  // IMAGE NAV
+  // =========================
   const prevImage = () => {
-    if (!product.images) return;
+    if (!product?.images) return;
     setSelectedIndex((prev) =>
       prev === 0 ? product.images.length - 1 : prev - 1
     );
   };
 
   const nextImage = () => {
-    if (!product.images) return;
+    if (!product?.images) return;
     setSelectedIndex((prev) =>
       prev === product.images.length - 1 ? 0 : prev + 1
     );
   };
 
-  const selectedImage = product.images[selectedIndex];
+  if (loading) return <p className="loading">Loading...</p>;
+  if (!product) return <p>Product not found</p>;
+
+  const hasDiscount = product.discountPrice > 0;
+  const selectedImage = product.images?.[selectedIndex];
 
   return (
     <>
@@ -74,7 +115,6 @@ export default function ProductDetailPage() {
           <div className="pdp-gallery">
 
             <div className="pdp-main-img-wrap">
-
               {selectedImage && (
                 <img
                   src={`${API_URL}${selectedImage}`}
@@ -83,7 +123,6 @@ export default function ProductDetailPage() {
                 />
               )}
 
-              {/* ARROWS */}
               <button className="arrow left" onClick={prevImage}>
                 ‹
               </button>
@@ -91,7 +130,6 @@ export default function ProductDetailPage() {
               <button className="arrow right" onClick={nextImage}>
                 ›
               </button>
-
             </div>
 
             <div className="pdp-thumbs">
@@ -142,8 +180,20 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="actions">
-              <button className="btn-cart">Add to Cart</button>
-              <button className="btn-buy">Buy Now</button>
+              <button
+                className="btn-cart"
+                onClick={handleAddToCart}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Adding..." : "Add to Cart"}
+              </button>
+
+              <button
+                className="btn-buy"
+                onClick={handleBuyNow}
+              >
+                Buy Now
+              </button>
             </div>
 
           </div>
@@ -155,7 +205,6 @@ export default function ProductDetailPage() {
 }
 
 const css = `
-
 .pdp-root{
 padding:40px;
 max-width:1200px;
@@ -168,8 +217,6 @@ display:grid;
 grid-template-columns:1fr 1fr;
 gap:60px;
 }
-
-/* IMAGE */
 
 .pdp-main-img-wrap{
 background:#f5f5f5;
@@ -184,8 +231,6 @@ width:100%;
 height:100%;
 object-fit:cover;
 }
-
-/* ARROWS */
 
 .arrow{
 position:absolute;
@@ -213,15 +258,8 @@ opacity:1;
 background:white;
 }
 
-.arrow.left{
-left:10px;
-}
-
-.arrow.right{
-right:10px;
-}
-
-/* THUMB */
+.arrow.left{ left:10px; }
+.arrow.right{ right:10px; }
 
 .pdp-thumbs{
 display:flex;
@@ -248,8 +286,6 @@ width:100%;
 height:100%;
 object-fit:cover;
 }
-
-/* INFO */
 
 .pdp-info h1{
 font-size:32px;
@@ -322,5 +358,4 @@ cursor:pointer;
 padding:40px;
 text-align:center;
 }
-
 `;
