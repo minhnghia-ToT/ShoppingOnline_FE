@@ -288,25 +288,26 @@ export const api = {
     return true;
   },
   uploadProductImages: async (productId: number, files: File[]) => {
+    const token = localStorage.getItem("token");
+
     const formData = new FormData();
 
     files.forEach(file => {
-      formData.append("files", file);
+      formData.append("Images", file); 
     });
 
     const res = await fetch(
       `${API_URL}/api/admin/products/${productId}/images`,
       {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
         body: formData,
       }
     );
 
-    if (!res.ok) {
-      throw new Error("Upload images failed");
-    }
-
-    return res.json();
+    return handleResponse(res);
   },
   updateProductStatus: async (id: number, status: string) => {
     return fetch(`${API_URL}/products/${id}/status`, {

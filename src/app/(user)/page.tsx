@@ -173,7 +173,7 @@ export default function HomePage() {
           <div
             key={product.id}
             className="product-card"
-            onClick={() => router.push(`/product/${product.id}`)}
+            onClick={() => router.push(`/products/${product.id}`)}
           >
             <div className="product-image-wrap">
               <img src={getImageUrl(product.mainImage)} alt={product.name} />
