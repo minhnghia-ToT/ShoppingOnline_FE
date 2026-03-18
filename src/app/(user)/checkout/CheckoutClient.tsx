@@ -12,25 +12,51 @@ export default function CheckoutClient() {
   const quantity = Number(params.get("quantity")) || 1;
 
   const [product, setProduct] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!productId) return;
+    const loadData = async () => {
+      try {
+        setPageLoading(true);
 
-      const data = await api.getUserProductById(Number(productId));
-      setProduct(data);
+        // BUY NOW
+        if (productId) {
+          const data = await api.getUserProductById(Number(productId));
+          setProduct(data);
+        }
+        // CART
+        else {
+          const cart = await api.getCart();
+          setCartItems(cart || []);
+        }
+      } catch (err: any) {
+        alert(err.message);
+      } finally {
+        setPageLoading(false);
+      }
     };
 
-    fetchProduct();
+    loadData();
   }, [productId]);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN").format(price) + "₫";
 
-  const total =
-    product && (product.discountPrice || product.price) * quantity;
+  let total = 0;
+
+  if (product) {
+    total = (product.discountPrice || product.price) * quantity;
+  }
+
+  if (cartItems.length > 0) {
+    total = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+  }
 
   const handleCheckout = async () => {
     try {
@@ -51,14 +77,16 @@ export default function CheckoutClient() {
     }
   };
 
+  if (pageLoading) return <h2>Loading checkout...</h2>;
+
   return (
     <div className="checkout-page">
       <h1>Checkout</h1>
 
+      {/* BUY NOW */}
       {product && (
-        <div className="product">
-          <img src={getImageUrl(product.mainImage)} />
-
+        <div className="item">
+          <img src={getImageUrl(product.mainImage)} width={100} />
           <div>
             <h3>{product.name}</h3>
             <p>Quantity: {quantity}</p>
@@ -66,6 +94,18 @@ export default function CheckoutClient() {
           </div>
         </div>
       )}
+
+      {/* CART */}
+      {cartItems.map((item) => (
+        <div key={item.productId} className="item">
+          <img src={getImageUrl(item.image)} width={100} />
+          <div>
+            <h3>{item.productName}</h3>
+            <p>Quantity: {item.quantity}</p>
+            <p>{formatPrice(item.price)}</p>
+          </div>
+        </div>
+      ))}
 
       <h2>Payment Method</h2>
 
@@ -90,7 +130,7 @@ export default function CheckoutClient() {
       </label>
 
       <div className="total">
-        Total: {product ? formatPrice(total) : "0₫"}
+        Total: {formatPrice(total)}
       </div>
 
       <button onClick={handleCheckout} disabled={loading}>
