@@ -293,7 +293,7 @@ export const api = {
     const formData = new FormData();
 
     files.forEach(file => {
-      formData.append("Images", file); 
+      formData.append("Images", file);
     });
 
     const res = await fetch(
@@ -301,7 +301,7 @@ export const api = {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       }
@@ -371,7 +371,21 @@ export const api = {
 
     return handleResponse(res);
   },
+  // ===============================
+  // USER CATEGORIES ⭐ NEW
+  // ===============================
 
+  getCategories: async () => {
+    const res = await fetch(`${API_URL}/api/admin/categories`);
+    return handleResponse(res);
+  },
+
+  getProductsByCategory: async (categoryId: number) => {
+    const res = await fetch(
+      `${API_URL}/api/products/category/${categoryId}`
+    );
+    return handleResponse(res);
+  },
   // ===============================
   // ADMIN ORDERS
   // ===============================

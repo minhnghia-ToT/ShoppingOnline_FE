@@ -6,28 +6,74 @@ import { useRouter } from "next/navigation";
 
 export default function ProductPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [keyword, setKeyword] = useState("");
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+
   const router = useRouter();
 
+  // ===============================
+  // LOAD DATA
+  // ===============================
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await api.getProducts();
-        setProducts(data);
-      } catch (err: any) {
-        alert(err.message);
-      }
-    };
     fetchProducts();
+    fetchCategories();
   }, []);
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat("vi-VN").format(price) + "₫";
+  const fetchProducts = async () => {
+    try {
+      const data = await api.getProducts();
+      setProducts(data);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await api.getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      console.log(err.message);
+    }
+  };
+
+  // ===============================
+  // ACTIONS
+  // ===============================
+
+  const handleSearch = async () => {
+    try {
+      if (!keyword.trim()) {
+        fetchProducts();
+        return;
+      }
+
+      const data = await api.searchUserProducts(keyword);
+      setProducts(data);
+      setSelectedCategory(null);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleFilterCategory = async (id: number) => {
+    try {
+      setSelectedCategory(id);
+      const data = await api.getProductsByCategory(id);
+      setProducts(data);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   const handleAddToCart = async (id: number) => {
     try {
       await api.addToCart(id, 1);
       setAddedIds((prev) => new Set(prev).add(id));
+
       setTimeout(() => {
         setAddedIds((prev) => {
           const next = new Set(prev);
@@ -44,112 +90,159 @@ export default function ProductPage() {
     router.push(`/checkout?productId=${id}&quantity=1`);
   };
 
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("vi-VN").format(price) + "₫";
+
+  // ===============================
+  // UI
+  // ===============================
+
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+      <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500&display=swap');
 
         .page {
-          min-height: 100vh;
-          background: #ffffff;
-          font-family: 'DM Sans', sans-serif;
-          color: #1a1a1a;
+          width: 100%;
+          background: var(--chalk);
+          font-family: 'Jost', sans-serif;
+          color: var(--ink);
         }
 
         .header {
-          padding: 56px 60px 28px;
-          border-bottom: 1px solid #f0ede8;
+          padding: 72px 80px 36px;
+          border-bottom: 1px solid var(--border);
           display: flex;
-          align-items: flex-end;
           justify-content: space-between;
+          align-items: flex-end;
         }
 
         .header-left h1 {
           font-family: 'Cormorant Garamond', serif;
-          font-size: 42px;
-          font-weight: 300;
-          letter-spacing: -0.5px;
-          color: #111;
-          line-height: 1;
+          font-size: 44px;
+          letter-spacing: 2px;
         }
 
         .header-left p {
-          margin-top: 6px;
-          font-size: 13px;
-          color: #999;
-          font-weight: 300;
-          letter-spacing: 0.5px;
+          margin-top: 8px;
+          font-size: 12px;
+          letter-spacing: 2px;
+          color: var(--muted);
+          text-transform: uppercase;
         }
 
         .header-count {
-          font-size: 12px;
-          color: #bbb;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          font-weight: 400;
+          font-size: 11px;
+          letter-spacing: 2px;
+          color: var(--muted);
         }
 
-        .grid-container {
-          padding: 44px 60px 80px;
+        .container {
+          padding: 60px 80px;
         }
+
+        .content {
+          display: grid;
+          grid-template-columns: 240px 1fr;
+          gap: 40px;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+          border-right: 1px solid var(--border);
+          padding-right: 20px;
+        }
+
+        .sidebar h3 {
+          font-family: 'Cormorant Garamond', serif;
+          margin-bottom: 20px;
+        }
+
+        .category-item {
+          padding: 10px 0;
+          cursor: pointer;
+          color: var(--muted);
+          font-size: 13px;
+        }
+
+        .category-item:hover {
+          color: var(--ink);
+        }
+
+        .category-item.active {
+          color: var(--gold);
+        }
+
+        /* SEARCH */
+
+        .search-bar {
+          display: flex;
+          margin-bottom: 30px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .search-bar input {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          background: transparent;
+          outline: none;
+        }
+
+        .search-bar button {
+          background: var(--gold);
+          border: none;
+          padding: 10px 16px;
+          cursor: pointer;
+        }
+
+        /* GRID */
 
         .grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 36px 28px;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 48px 36px;
         }
 
         .card {
-          background: #fff;
           cursor: pointer;
-          position: relative;
-          animation: fadeUp 0.5s ease both;
+          transition: 0.3s;
         }
 
-        .card:nth-child(1) { animation-delay: 0ms; }
-        .card:nth-child(2) { animation-delay: 60ms; }
-        .card:nth-child(3) { animation-delay: 120ms; }
-        .card:nth-child(4) { animation-delay: 180ms; }
-        .card:nth-child(5) { animation-delay: 240ms; }
-        .card:nth-child(6) { animation-delay: 300ms; }
-        .card:nth-child(7) { animation-delay: 360ms; }
-        .card:nth-child(8) { animation-delay: 420ms; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
+        .card:hover {
+          transform: translateY(-4px);
         }
 
         .card-image-wrap {
           position: relative;
           overflow: hidden;
-          background: #f8f7f5;
           aspect-ratio: 3 / 4;
+          background: #eee;
         }
 
         .card-image-wrap img {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          display: block;
-          transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          transition: 0.6s;
         }
 
-        .card:hover .card-image-wrap img {
-          transform: scale(1.04);
+        .card:hover img {
+          transform: scale(1.05);
         }
 
         .card-overlay {
           position: absolute;
-          bottom: 0; left: 0; right: 0;
-          background: rgba(255,255,255,0.96);
-          padding: 14px 16px;
-          transform: translateY(100%);
-          transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: rgba(14,14,14,0.9);
+          padding: 14px;
           display: flex;
-          gap: 8px;
+          gap: 10px;
+          transform: translateY(100%);
+          transition: 0.3s;
         }
 
         .card:hover .card-overlay {
@@ -158,172 +251,158 @@ export default function ProductPage() {
 
         .btn {
           flex: 1;
-          padding: 10px 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 11.5px;
-          font-weight: 500;
-          letter-spacing: 0.8px;
+          padding: 10px;
+          font-size: 11px;
           text-transform: uppercase;
           border: none;
           cursor: pointer;
-          transition: all 0.2s ease;
         }
 
         .btn-cart {
-          background: #f5f4f2;
-          color: #333;
-          border: 1px solid #e8e6e2;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.3);
+          color: #fff;
         }
 
-        .btn-cart:hover, .btn-cart.added {
-          background: #1a1a1a;
-          color: #fff;
-          border-color: #1a1a1a;
+        .btn-cart.added,
+        .btn-cart:hover {
+          background: var(--gold);
+          color: #000;
         }
 
         .btn-buy {
-          background: #1a1a1a;
-          color: #fff;
-        }
-
-        .btn-buy:hover {
-          background: #333;
+          background: var(--gold);
         }
 
         .card-body {
-          padding: 16px 4px 0;
+          text-align: center;
+          padding-top: 16px;
         }
 
         .card-name {
           font-family: 'Cormorant Garamond', serif;
           font-size: 18px;
-          font-weight: 500;
-          color: #111;
-          line-height: 1.3;
-          letter-spacing: 0.1px;
         }
 
         .card-price {
           margin-top: 6px;
           font-size: 13px;
-          font-weight: 400;
-          color: #888;
-          letter-spacing: 0.2px;
+          color: var(--muted);
         }
 
-        .card-price .original {
-          text-decoration: line-through;
-          color: #ccc;
-          margin-left: 6px;
-          font-size: 12px;
-        }
+        /* MOBILE */
 
-        .loading-skeleton {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 36px 28px;
-        }
+        @media (max-width: 768px) {
+          .content {
+            grid-template-columns: 1fr;
+          }
 
-        .skeleton-card { animation: pulse 1.5s ease infinite; }
-
-        .skeleton-img {
-          aspect-ratio: 3/4;
-          background: #f2f1ef;
-          border-radius: 2px;
-        }
-
-        .skeleton-line {
-          height: 14px;
-          background: #f2f1ef;
-          border-radius: 2px;
-          margin-top: 14px;
-        }
-
-        .skeleton-line.short { width: 50%; margin-top: 8px; }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        @media (max-width: 640px) {
-          .header { padding: 36px 24px 20px; flex-direction: column; align-items: flex-start; gap: 8px; }
-          .grid-container { padding: 28px 24px 60px; }
-          .grid { gap: 24px 16px; grid-template-columns: repeat(2, 1fr); }
-          .card-overlay { transform: translateY(0); }
-          .header-left h1 { font-size: 32px; }
+          .sidebar {
+            display: flex;
+            overflow-x: auto;
+            gap: 16px;
+            border: none;
+          }
         }
       `}</style>
 
       <div className="page">
-        {/* Header */}
+        {/* HEADER */}
         <div className="header">
           <div className="header-left">
-            <h1>Sản phẩm</h1>
-            <p>Khám phá bộ sưu tập của chúng tôi</p>
+            <h1>Products</h1>
+            <p>Explore our collection</p>
           </div>
-          {products.length > 0 && (
-            <span className="header-count">{products.length} sản phẩm</span>
-          )}
+          <span className="header-count">{products.length} items</span>
         </div>
 
-        {/* Grid */}
-        <div className="grid-container">
-          {products.length === 0 ? (
-            <div className="loading-skeleton">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="skeleton-card">
-                  <div className="skeleton-img" />
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line short" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid">
-              {products.map((p) => (
-                <div key={p.id} className="card">
-                  {/* Image */}
-                  <div className="card-image-wrap">
-                    <img
-                      src={getImageUrl(p.mainImage)}
-                      alt={p.name}
-                      onClick={() => router.push(`/products/${p.id}`)}
-                    />
-                    {/* Hover Overlay with Actions */}
-                    <div className="card-overlay">
-                      <button
-                        className={`btn btn-cart${addedIds.has(p.id) ? " added" : ""}`}
-                        onClick={() => handleAddToCart(p.id)}
-                      >
-                        {addedIds.has(p.id) ? "Đã thêm ✓" : "Thêm vào giỏ"}
-                      </button>
-                      <button
-                        className="btn btn-buy"
-                        onClick={() => handleBuyNow(p.id)}
-                      >
-                        Mua ngay
-                      </button>
-                    </div>
-                  </div>
+        {/* CONTENT */}
+        <div className="container">
+          <div className="content">
+            {/* SIDEBAR */}
+            <div className="sidebar">
+              <h3>Categories</h3>
 
-                  {/* Info */}
-                  <div
-                    className="card-body"
-                    onClick={() => router.push(`/products/${p.id}`)}
-                  >
-                    <div className="card-name">{p.name}</div>
-                    <div className="card-price">
-                      {formatPrice(p.discountPrice || p.price)}
-                      {p.discountPrice && p.price !== p.discountPrice && (
-                        <span className="original">{formatPrice(p.price)}</span>
-                      )}
-                    </div>
-                  </div>
+              <div
+                className={`category-item ${!selectedCategory ? "active" : ""}`}
+                onClick={() => {
+                  setSelectedCategory(null);
+                  fetchProducts();
+                }}
+              >
+                All
+              </div>
+
+              {categories.map((c) => (
+                <div
+                  key={c.id}
+                  className={`category-item ${
+                    selectedCategory === c.id ? "active" : ""
+                  }`}
+                  onClick={() => handleFilterCategory(c.id)}
+                >
+                  {c.name}
                 </div>
               ))}
             </div>
-          )}
+
+            {/* MAIN */}
+            <div>
+              {/* SEARCH */}
+              <div className="search-bar">
+                <input
+                  placeholder="Search products..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                <button onClick={handleSearch}>Search</button>
+              </div>
+
+              {/* GRID */}
+              <div className="grid">
+                {products.map((p) => (
+                  <div key={p.id} className="card">
+                    <div className="card-image-wrap">
+                      <img
+                        src={getImageUrl(p.mainImage)}
+                        onClick={() =>
+                          router.push(`/products/${p.id}`)
+                        }
+                      />
+
+                      <div className="card-overlay">
+                        <button
+                          className={`btn btn-cart ${
+                            addedIds.has(p.id) ? "added" : ""
+                          }`}
+                          onClick={() => handleAddToCart(p.id)}
+                        >
+                          {addedIds.has(p.id)
+                            ? "Added ✓"
+                            : "Add"}
+                        </button>
+
+                        <button
+                          className="btn btn-buy"
+                          onClick={() => handleBuyNow(p.id)}
+                        >
+                          Buy
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="card-body">
+                      <div className="card-name">{p.name}</div>
+                      <div className="card-price">
+                        {formatPrice(p.discountPrice || p.price)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>

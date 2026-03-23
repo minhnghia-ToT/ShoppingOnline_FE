@@ -13,19 +13,18 @@ interface Product {
   mainImage: string;
 }
 
-interface Banner {
+interface Category {
   id: number;
-  imageUrl: string;
-  isActive: boolean;
+  name: string;
 }
 
 export default function HomePage() {
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [currentBanner, setCurrentBanner] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [keyword, setKeyword] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -43,59 +42,45 @@ export default function HomePage() {
   // FETCH DATA
   // =========================
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const productData = await api.getProducts();
-        setProducts(productData);
-
-        const bannerData = await api.getAdminBanners();
-        const active = bannerData.filter((b: Banner) => b.isActive);
-        setBanners(active);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchData();
+    fetchProducts();
+    fetchCategories();
   }, []);
 
-  // =========================
-  // BANNER AUTO SLIDE
-  // =========================
-  const changeBanner = (index: number) => {
-    if (isTransitioning) return;
-
-    setIsTransitioning(true);
-
-    setTimeout(() => {
-      setCurrentBanner(index);
-      setIsTransitioning(false);
-    }, 400);
+  const fetchProducts = async () => {
+    const data = await api.getProducts();
+    setProducts(data);
   };
 
-  useEffect(() => {
-    if (banners.length === 0) return;
+  const fetchCategories = async () => {
+    const data = await api.getCategories();
+    setCategories(data);
+  };
 
-    const interval = setInterval(() => {
-      changeBanner(
-        currentBanner === banners.length - 1 ? 0 : currentBanner + 1
-      );
-    }, 5000);
+  // =========================
+  // SEARCH
+  // =========================
+  const handleSearch = async () => {
+    if (!keyword.trim()) return fetchProducts();
 
-    return () => clearInterval(interval);
-  }, [banners, currentBanner]);
+    const data = await api.searchUserProducts(keyword);
+    setProducts(data);
+    setSelectedCategory(null);
+  };
 
-  const nextBanner = () =>
-    changeBanner(currentBanner === banners.length - 1 ? 0 : currentBanner + 1);
-
-  const prevBanner = () =>
-    changeBanner(currentBanner === 0 ? banners.length - 1 : currentBanner - 1);
+  // =========================
+  // FILTER CATEGORY
+  // =========================
+  const handleFilterCategory = async (id: number) => {
+    setSelectedCategory(id);
+    const data = await api.getProductsByCategory(id);
+    setProducts(data);
+  };
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN").format(price) + "₫";
 
   // =========================
-  // ADD TO CART (API)
+  // ADD TO CART
   // =========================
   const handleAddToCart = async (product: Product) => {
     if (!isLoggedIn()) {
@@ -103,22 +88,11 @@ export default function HomePage() {
       return;
     }
 
-    try {
-      setLoadingId(product.id);
-
-      await api.addToCart(product.id, 1);
-
-      alert("Added to cart successfully");
-    } catch (err) {
-      alert((err as Error).message);
-    } finally {
-      setLoadingId(null);
-    }
+    setLoadingId(product.id);
+    await api.addToCart(product.id, 1);
+    setLoadingId(null);
   };
 
-  // =========================
-  // BUY NOW
-  // =========================
   const handleBuyNow = (product: Product) => {
     if (!isLoggedIn()) {
       router.push("/login");
@@ -129,79 +103,109 @@ export default function HomePage() {
   };
 
   return (
-    <div className="home-page">
-      {/* =========================
-            BANNER
-      ========================== */}
-      <section className="banner-wrapper">
-        {banners.length > 0 && (
-          <>
-            <div
-              className={`banner-img-layer ${
-                isTransitioning ? "fade-out" : "fade-in"
-              }`}
-            >
-              <img
-                src={getImageUrl(banners[currentBanner].imageUrl)}
-                alt=""
-                className="banner-img"
-              />
-            </div>
+    <>
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-overlay">
+          <h1>
+            Discover <em>Modern Fashion</em>
+          </h1>
+          <p>Explore premium collections for your everyday style.</p>
 
-            <div className="banner-arrows">
-              <button className="banner-btn" onClick={prevBanner}>
-                ◀
-              </button>
-
-              <button className="banner-btn" onClick={nextBanner}>
-                ▶
-              </button>
-            </div>
-          </>
-        )}
+          <button
+            className="hero-btn"
+            onClick={() => router.push("/products")}
+          >
+            Shop Now
+          </button>
+        </div>
       </section>
 
-      {/* HERO */}
-      <section className="page-hero">
-        <p className="hero-eyebrow">Collection</p>
-        <h1 className="hero-title">Our Products</h1>
+      {/* SEARCH */}
+      <section className="search">
+        <div className="search-inner">
+          <input
+            placeholder="Search products..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <button onClick={handleSearch}>Search</button>
+        </div>
       </section>
 
       {/* PRODUCTS */}
-      <section className="product-grid">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="product-card"
-            onClick={() => router.push(`/products/${product.id}`)}
+      <section className="products">
+        <div className="section-header">
+          <h2>Products</h2>
+          <span>{products.length} items</span>
+        </div>
+
+        {/* CATEGORY FILTER */}
+        <div style={{ marginBottom: 40, display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <button
+            onClick={() => {
+              setSelectedCategory(null);
+              fetchProducts();
+            }}
+            style={{
+              padding: "8px 16px",
+              border: "1px solid #ddd",
+              background: !selectedCategory ? "#000" : "#fff",
+              color: !selectedCategory ? "#fff" : "#000",
+            }}
           >
-            <div className="product-image-wrap">
-              <img src={getImageUrl(product.mainImage)} alt={product.name} />
-            </div>
+            All
+          </button>
 
-            <div className="product-body">
-              <p className="product-category">{product.categoryName}</p>
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => handleFilterCategory(c.id)}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #ddd",
+                background: selectedCategory === c.id ? "#000" : "#fff",
+                color: selectedCategory === c.id ? "#fff" : "#000",
+              }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
 
-              <h3 className="product-name">{product.name}</h3>
-
-              <div className="product-price">
-                {product.discountPrice > 0 ? (
-                  <>
-                    <span className="price-old">
-                      {formatPrice(product.price)}
-                    </span>
-
-                    <span className="price-new">
-                      {formatPrice(product.discountPrice)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="price-new">
-                    {formatPrice(product.price)}
-                  </span>
-                )}
+        {/* GRID */}
+        <div className="product-grid">
+          {products.map((product) => (
+            <div
+              key={product.id}
+              className="product-card"
+              onClick={() => router.push(`/products/${product.id}`)}
+            >
+              <div className="product-card-image">
+                <img src={getImageUrl(product.mainImage)} />
               </div>
 
+              <div className="product-card-info">
+                <h3>{product.name}</h3>
+
+                <div className="price">
+                  {product.discountPrice > 0 ? (
+                    <>
+                      <span style={{ textDecoration: "line-through", marginRight: 6 }}>
+                        {formatPrice(product.price)}
+                      </span>
+                      <span className="price-sale">
+                        {formatPrice(product.discountPrice)}
+                      </span>
+                    </>
+                  ) : (
+                    formatPrice(product.price)
+                  )}
+                </div>
+              </div>
+
+              {/* ACTIONS */}
               <div
                 className="product-actions"
                 onClick={(e) => e.stopPropagation()}
@@ -209,7 +213,6 @@ export default function HomePage() {
                 <button
                   className="btn-cart"
                   onClick={() => handleAddToCart(product)}
-                  disabled={loadingId === product.id}
                 >
                   {loadingId === product.id ? "Adding..." : "Add to cart"}
                 </button>
@@ -222,118 +225,9 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
-
-      {/* STYLE */}
-      <style jsx>{`
-        .home-page {
-          font-family: sans-serif;
-          background: #f5f3ef;
-        }
-
-        .banner-wrapper {
-          height: 70vh;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .banner-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .banner-arrows {
-          position: absolute;
-          right: 40px;
-          top: 50%;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .banner-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: none;
-          background: rgba(255,255,255,0.6);
-          cursor: pointer;
-        }
-
-        .page-hero {
-          text-align: center;
-          padding: 60px 20px;
-        }
-
-        .hero-title {
-          font-size: 42px;
-        }
-
-        .product-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
-          gap: 20px;
-          padding: 40px 80px;
-        }
-
-        .product-card {
-          background: white;
-          border: 1px solid #eee;
-          cursor: pointer;
-        }
-
-        .product-image-wrap {
-          height: 260px;
-          overflow: hidden;
-        }
-
-        .product-image-wrap img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .product-body {
-          padding: 20px;
-        }
-
-        .product-actions {
-          display: flex;
-          gap: 10px;
-          margin-top: 10px;
-        }
-
-        .btn-cart,
-        .btn-buy {
-          flex: 1;
-          padding: 10px;
-          border: none;
-          cursor: pointer;
-        }
-
-        .btn-cart {
-          background: white;
-          border: 1px solid black;
-        }
-
-        .btn-buy {
-          background: black;
-          color: white;
-        }
-
-        .price-old {
-          text-decoration: line-through;
-          margin-right: 10px;
-          color: gray;
-        }
-
-        .price-new {
-          font-weight: bold;
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
