@@ -64,7 +64,17 @@ export const api = {
 
     return handleResponse(res);
   },
+  googleLogin: async (googleToken: string) => {
+    const res = await fetch(`${API_URL}/api/auth/google-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: googleToken,
+      }),
+    });
 
+    return handleResponse(res);
+  },
   register: async (data: {
     email: string;
     password: string;
