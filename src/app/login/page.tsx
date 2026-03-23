@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
+import { GoogleLogin } from "@react-oauth/google";
+import { api } from "@/src/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,45 +13,56 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // ======================
+  // LOGIN THƯỜNG
+  // ======================
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/Auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Invalid email or password");
-      }
-
-      const data = await response.json();
-
-      localStorage.setItem("token", data.token);
-
-      const decoded: any = jwtDecode(data.token);
-
-      const role =
-        decoded.role ||
-        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-
-      localStorage.setItem("role", role);
-
-      if (role?.toLowerCase() === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/");
-      }
+      const data = await api.login(email, password);
+      handleAuthSuccess(data.token);
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  // ======================
+  // LOGIN GOOGLE
+  // ======================
+  const handleGoogleLogin = async (credentialResponse: any) => {
+    try {
+      const data = await api.googleLogin(
+        credentialResponse.credential
+      );
+
+      handleAuthSuccess(data.token);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  // ======================
+  // XỬ LÝ TOKEN
+  // ======================
+  const handleAuthSuccess = (token: string) => {
+    localStorage.setItem("token", token);
+
+    const decoded: any = jwtDecode(token);
+
+    const role =
+      decoded.role ||
+      decoded[
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+      ];
+
+    localStorage.setItem("role", role);
+
+    if (role?.toLowerCase() === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/");
     }
   };
 
@@ -57,11 +70,13 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
 
+        {/* HEADER */}
         <div className="login-header">
           <h1>VELORA</h1>
           <p>Sign in to your account</p>
         </div>
 
+        {/* FORM */}
         <form onSubmit={handleLogin} className="login-form">
           <input
             type="email"
@@ -84,6 +99,24 @@ export default function LoginPage() {
           <button type="submit">Login</button>
         </form>
 
+        {/* OR */}
+        <div className="divider">
+          <span>OR</span>
+        </div>
+
+        {/* GOOGLE LOGIN */}
+        <div className="google-login">
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => setError("Google login failed")}
+            theme="outline"
+            size="large"
+            text="continue_with"
+            shape="rectangular"
+          />
+        </div>
+
+        {/* EXTRA */}
         <div className="login-extra">
           <a href="#">Forgot password?</a>
           <span>
@@ -100,7 +133,7 @@ export default function LoginPage() {
           align-items: center;
           justify-content: center;
           background: #f8f8f8;
-          font-family: Arial, Helvetica, sans-serif;
+          font-family: 'Jost', sans-serif;
         }
 
         .login-card {
@@ -160,6 +193,37 @@ export default function LoginPage() {
 
         .login-form button:hover {
           background: #222;
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+          margin: 20px 0;
+          text-align: center;
+          position: relative;
+        }
+
+        .divider span {
+          background: white;
+          padding: 0 10px;
+          color: #999;
+          font-size: 12px;
+        }
+
+        .divider::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 0;
+          width: 100%;
+          height: 1px;
+          background: #eee;
+          z-index: -1;
+        }
+
+        /* ===== GOOGLE ===== */
+        .google-login {
+          display: flex;
+          justify-content: center;
         }
 
         .login-extra {

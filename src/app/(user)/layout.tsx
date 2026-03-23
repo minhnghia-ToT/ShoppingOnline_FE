@@ -1,6 +1,7 @@
 "use client";
 
 import Header from "@/src/components/Header";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 export default function UserLayout({
   children,
@@ -8,7 +9,8 @@ export default function UserLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <GoogleOAuthProvider clientId="111570897583-e8s74564fjq1ulf5b9sbkgpeq7e61m0h.apps.googleusercontent.com">
+      
       {/* Top bar */}
       <div className="topbar">
         Get 15% off on your first order
@@ -166,6 +168,6 @@ export default function UserLayout({
           }
         }
       `}</style>
-    </>
+    </GoogleOAuthProvider>
   );
 }
