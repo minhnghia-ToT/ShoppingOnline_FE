@@ -469,4 +469,19 @@ export const api = {
 
     return handleResponse(res);
   },
+  // =============================== 
+  // VN PAY
+  // ===============================
+ createVnPayPayment: async (orderId: number) => {
+  const res = await fetch(
+    `${API_URL}/api/payment/create`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ orderId }),
+    }
+  );
+
+  return handleResponse(res);
+},
 };
