@@ -35,10 +35,6 @@ export default function EditProductPage() {
     type: "success" | "error";
   } | null>(null);
 
-  // ===============================
-  // Notification helper
-  // ===============================
-
   const showNotification = (
     message: string,
     type: "success" | "error"
@@ -46,10 +42,6 @@ export default function EditProductPage() {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
-
-  // ===============================
-  // LOAD PRODUCT
-  // ===============================
 
   useEffect(() => {
     if (!productId) return;
@@ -60,74 +52,45 @@ export default function EditProductPage() {
     try {
       const data = await api.getAdminProductById(productId);
 
-      setName(data.name);
-      setDescription(data.description);
-      setPrice(data.price);
-      setDiscountPrice(data.discountPrice);
-      setStockQuantity(data.stockQuantity);
-      setStatus(data.status);
-      setCategoryId(data.categoryId);
-      setImages(data.images || []);
+      setName(data.name ?? "");
+      setDescription(data.description ?? "");
+      setPrice(data.price ?? 0);
+      setDiscountPrice(data.discountPrice ?? 0);
+      setStockQuantity(data.stockQuantity ?? 0);
+      setStatus(data.status ?? "Active");
+      setCategoryId(data.categoryId ?? 1);
+      setImages(data.images ?? []);
     } catch (err: any) {
-      showNotification(
-        err.message || "Failed to load product",
-        "error"
-      );
+      showNotification(err.message || "Failed to load product", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // ===============================
-  // UPDATE STATUS (PATCH API)
-  // ===============================
-
   const handleChangeStatus = async (newStatus: string) => {
     try {
       setStatusLoading(true);
-
       await api.updateProductStatus(productId, newStatus);
-
       setStatus(newStatus);
-
-      showNotification(
-        "Status updated successfully",
-        "success"
-      );
+      showNotification("Status updated successfully", "success");
     } catch (err: any) {
-      showNotification(
-        err.message || "Failed to update status",
-        "error"
-      );
+      showNotification(err.message || "Failed to update status", "error");
     } finally {
       setStatusLoading(false);
     }
   };
-
-  // ===============================
-  // DELETE IMAGE
-  // ===============================
 
   const handleDeleteImage = async (imageId: number) => {
     if (!confirm("Delete this image?")) return;
 
     try {
       await api.deleteProductImage(imageId);
-      setImages((prev) =>
-        prev.filter((img) => img.id !== imageId)
-      );
+      setImages((prev) => prev.filter((img) => img.id !== imageId));
       showNotification("Image deleted successfully", "success");
     } catch (err: any) {
-      showNotification(
-        err.message || "Failed to delete image",
-        "error"
-      );
+      showNotification(err.message || "Failed to delete image", "error");
     }
   };
-
-  // ===============================
-  // UPDATE PRODUCT
-  // ===============================
 
   const handleSubmit = async () => {
     try {
@@ -141,34 +104,24 @@ export default function EditProductPage() {
         stockQuantity,
         status,
         categoryId,
-        newImages: [] as {
-          imageUrl: string;
-          isMain: boolean;
-        }[],
+        newImages: [],
       };
 
       await api.updateProduct(productId, payload);
 
-      showNotification(
-        "Product updated successfully",
-        "success"
-      );
+      showNotification("Product updated successfully", "success");
 
       setTimeout(() => {
         router.push("/admin/products");
       }, 1000);
     } catch (err: any) {
-      showNotification(
-        err.message || "Update failed",
-        "error"
-      );
+      showNotification(err.message || "Update failed", "error");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading)
-    return <div style={{ padding: 40 }}>Loading...</div>;
+  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
 
   return (
     <div style={pageStyle}>
@@ -177,12 +130,7 @@ export default function EditProductPage() {
       <div style={formGrid}>
         <Input label="Name" value={name} setValue={setName} />
 
-        <Input
-          label="Price"
-          value={price}
-          setValue={setPrice}
-          type="number"
-        />
+        <Input label="Price" value={price} setValue={setPrice} type="number" />
 
         <Input
           label="Discount Price"
@@ -201,22 +149,17 @@ export default function EditProductPage() {
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={labelStyle}>Description</label>
           <textarea
-            value={description}
-            onChange={(e) =>
-              setDescription(e.target.value)
-            }
+            value={description ?? ""}
+            onChange={(e) => setDescription(e.target.value)}
             style={textareaStyle}
           />
         </div>
 
-        {/* STATUS */}
         <div>
           <label style={labelStyle}>Status</label>
           <select
-            value={status}
-            onChange={(e) =>
-              handleChangeStatus(e.target.value)
-            }
+            value={status ?? "Active"}
+            onChange={(e) => handleChangeStatus(e.target.value)}
             disabled={statusLoading}
             style={{
               ...inputStyle,
@@ -226,28 +169,23 @@ export default function EditProductPage() {
             <option value="Active">Active</option>
             <option value="Hidden">Hidden</option>
           </select>
-
-          {statusLoading && (
-            <div style={{ fontSize: 12, marginTop: 4 }}>
-              Updating status...
-            </div>
-          )}
         </div>
 
         <div>
           <label style={labelStyle}>Category Id</label>
           <input
             type="number"
-            value={categoryId}
+            value={categoryId ?? 0}
             onChange={(e) =>
-              setCategoryId(Number(e.target.value))
+              setCategoryId(
+                e.target.value === "" ? 0 : Number(e.target.value)
+              )
             }
             style={inputStyle}
           />
         </div>
       </div>
 
-      {/* IMAGES */}
       <h2 style={{ marginTop: 40 }}>Images</h2>
 
       <div style={imageGrid}>
@@ -265,9 +203,7 @@ export default function EditProductPage() {
 
             <button
               style={deleteBtn}
-              onClick={() =>
-                handleDeleteImage(img.id)
-              }
+              onClick={() => handleDeleteImage(img.id)}
             >
               ×
             </button>
@@ -275,30 +211,16 @@ export default function EditProductPage() {
         ))}
       </div>
 
-      {/* SAVE */}
-      <button
-        onClick={handleSubmit}
-        style={saveBtn}
-      >
+      <button onClick={handleSubmit} style={saveBtn}>
         {saving ? "Saving..." : "Update Product"}
       </button>
 
-      {/* IMAGE PREVIEW */}
       {previewImage && (
-        <div
-          style={overlay}
-          onClick={() =>
-            setPreviewImage(null)
-          }
-        >
-          <img
-            src={previewImage}
-            style={previewStyle}
-          />
+        <div style={overlay} onClick={() => setPreviewImage(null)}>
+          <img src={previewImage} style={previewStyle} />
         </div>
       )}
 
-      {/* NOTIFICATION */}
       {notification && (
         <div
           style={{
@@ -310,11 +232,8 @@ export default function EditProductPage() {
             color: "#fff",
             fontWeight: 600,
             background:
-              notification.type === "success"
-                ? "#22c55e"
-                : "#ef4444",
-            boxShadow:
-              "0 8px 20px rgba(0,0,0,0.15)",
+              notification.type === "success" ? "#22c55e" : "#ef4444",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
             zIndex: 9999,
           }}
         >
@@ -325,8 +244,6 @@ export default function EditProductPage() {
   );
 }
 
-/* ================= INPUT COMPONENT ================= */
-
 function Input({
   label,
   value,
@@ -334,7 +251,7 @@ function Input({
   type = "text",
 }: {
   label: string;
-  value: string | number;
+  value: string | number | null | undefined;
   setValue: any;
   type?: string;
 }) {
@@ -343,19 +260,20 @@ function Input({
       <label style={labelStyle}>{label}</label>
       <input
         type={type}
-        value={value}
-        onChange={(e) =>
-          type === "number"
-            ? setValue(Number(e.target.value))
-            : setValue(e.target.value)
-        }
+        value={value ?? ""}
+        onChange={(e) => {
+          if (type === "number") {
+            const val = e.target.value;
+            setValue(val === "" ? 0 : Number(val));
+          } else {
+            setValue(e.target.value);
+          }
+        }}
         style={inputStyle}
       />
     </div>
   );
 }
-
-/* ================= STYLES ================= */
 
 const pageStyle: React.CSSProperties = {
   padding: "50px 60px",
